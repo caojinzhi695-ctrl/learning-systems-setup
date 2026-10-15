@@ -27,3 +27,4 @@ __pycache__/
 auth.json
 model_catalog.json
 local-paths.json
+shortcut-icons/

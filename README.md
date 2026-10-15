@@ -62,6 +62,18 @@ pwsh -NoProfile -File ./scripts/manage.ps1 -Action Configure -Root 'E:\LearningS
 pwsh -NoProfile -File ./scripts/manage.ps1 -Action Start -Root 'E:\LearningSystems'
 ```
 
+安装完成后会从 DeepSeek 官网下载图标，在当前 Windows 桌面创建 **“DeepSeek 官方 API 密钥”** 快捷方式，并用默认浏览器打开官方密钥页面，供你手动登录。不会自动登录、读取浏览器凭据、创建密钥或充值。
+
+已有安装可以单独补建快捷方式并打开登录页，无需重装：
+
+```powershell
+pwsh -NoProfile -File ./scripts/manage.ps1 -Action DeepSeekPortal -Root 'E:\LearningSystems'
+# 只创建快捷方式，不打开网页
+pwsh -NoProfile -File ./scripts/deepseek-shortcut.ps1 -Root 'E:\LearningSystems' -NoOpen
+```
+
+图标保存在安装目录 `shortcut-icons`；桌面位置由 Windows 解析，不写死用户名，也支持已重定向的桌面。遇到验证码或登录限制由用户手动处理，不绕过。官方下载失败会报错；可重复执行上述命令，已有快捷方式修改前会备份。
+
 脚本不购买、不充值、不发送模型测试请求。配置成功只表示设置已保存；第一次问答或生成课程会调用 API 并产生费用。
 
 安装脚本与文档整理后进行了静态检查，**尚未在另一台全新电脑重新安装验证**。本机原安装的运行验证与整合脚本的可移植性验证是两件事。

@@ -1,5 +1,5 @@
 param(
-  [ValidateSet('Check','Install','Configure','Start','Stop','Restart')][string]$Action = 'Check',
+  [ValidateSet('Check','Install','Configure','Start','Stop','Restart','DeepSeekPortal')][string]$Action = 'Check',
   [ValidateSet('Both','DeepTutor','OpenMAIC')][string]$Project = 'Both',
   [string]$Root = (Join-Path $env:LOCALAPPDATA 'LearningSystems')
 )
@@ -95,6 +95,10 @@ if($Action -eq 'Check') {
   foreach($port in @(3782,8001,3001)) {Write-Host "Port $port occupied: $([bool](Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue))"}
   return
 }
+if($Action -eq 'DeepSeekPortal') {
+  & (Join-Path $PSScriptRoot 'deepseek-shortcut.ps1') -Root $Root
+  return
+}
 if($Action -eq 'Install'){Check-Tools}
 foreach($dir in @($Root,(Join-Path $Root 'logs'),(Join-Path $Root 'backups'),(Join-Path $Root 'OpenMAIC-data/exports'))){New-Item -ItemType Directory -Path $dir -Force | Out-Null}
 if($Action -eq 'Configure') {
@@ -117,4 +121,7 @@ foreach($name in $names){
   if($Action -In @('Stop','Restart')){Stop-One $name}
   if($Action -eq 'Restart'){Start-Sleep -Seconds 3}
   if($Action -In @('Start','Restart')){Start-One $name}
+}
+if($Action -eq 'Install') {
+  & (Join-Path $PSScriptRoot 'deepseek-shortcut.ps1') -Root $Root
 }
