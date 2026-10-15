@@ -28,3 +28,7 @@ auth.json
 model_catalog.json
 local-paths.json
 shortcut-icons/
+
+# Reviewed distribution code; keep installation directories ignored elsewhere.
+!customizations/DeepTutor/
+!customizations/DeepTutor/files/deeptutor/

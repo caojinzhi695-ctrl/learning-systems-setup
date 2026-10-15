@@ -6,7 +6,9 @@
 
 面向非专业开发者的两套开源学习工具安装、启动、DeepSeek API 配置和备份方案。
 
-**本仓库是安装与使用整合仓库，并非 DeepTutor 或 OpenMAIC 官方项目，也不重新分发两者完整源码。** 安装时直接从各自官方来源获取指定稳定版本。
+**新增：DeepTutor 固定模板总结笔记。** 主页式居中输入框、可折叠右侧收集栏，粘贴材料后同时获得六章文字笔记与独立 HTML 网页。新安装会自动应用定制；已有安装见 [定制安装与使用](docs/summary-notes.md)。
+
+**本仓库是安装与使用整合仓库，并非 DeepTutor 或 OpenMAIC 官方项目，也不重新分发两者完整源码。** 安装时直接从各自官方来源获取指定稳定版本，再应用随包注明版本的本地定制补丁。
 
 ## 两个项目分别做什么
 
@@ -83,6 +85,7 @@ pwsh -NoProfile -File ./scripts/deepseek-shortcut.ps1 -Root 'E:\LearningSystems'
 | 项目 | 网页 | 服务 |
 | --- | --- | --- |
 | DeepTutor | <http://127.0.0.1:3782> | 后端 8001，网页 3782 |
+| 总结笔记定制 | <http://127.0.0.1:3782/summary-notes> | 使用 DeepTutor 已配置模型 |
 | OpenMAIC | <http://127.0.0.1:3001> | 应用服务 3001 |
 
 ```powershell
@@ -122,6 +125,7 @@ OpenMAIC 当前使用官方默认浏览器 IndexedDB。请固定使用同一浏�
 
 ## 已知问题与本地修改
 
+- DeepTutor：总结笔记定制包位于 `customizations/DeepTutor`，包含固定规则与模板、文字/HTML 双文件交付、主页式输入和右侧收集栏，严格适配 v1.6.14。它是本仓库定制，使用源码安装，见 [完整说明](docs/summary-notes.md)。
 - DeepTutor：浏览器保存的语言优先于服务端。需在当前浏览器设置“界面语言”和“模型输出语言”为中文；不要依赖自动网页翻译。
 - DeepTutor：选择题随机排序后，解析可能仍引用旧选项字母；本次判分正确，文字解析有歧义，尚未修复。以完整选项含义判断，可申请复核。
 - DeepTutor：配置兼容问题的最小补丁见 `scripts/prepare.py`；改动前备份原文件。
@@ -132,6 +136,7 @@ OpenMAIC 当前使用官方默认浏览器 IndexedDB。请固定使用同一浏�
 ## 文档与反馈
 
 - [第一次学习操作](docs/usage.md)
+- [总结笔记：定制安装与固定模板使用](docs/summary-notes.md)
 - [测试记录与内容检查](docs/verification.md)
 - [备份、更新、卸载](docs/maintenance.md)
 - [安全与隐私](SECURITY.md)

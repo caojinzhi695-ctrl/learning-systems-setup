@@ -17,6 +17,8 @@ OpenMAIC：在原浏览器中导出每个重要课程的课堂ZIP，保存到安
 5. 阅读并重新评估 `scripts/prepare.py` 的版本限定修改；官方修复后应移除对应本地兼容代码，不盲目套补丁。
 6. 验证网页、一次小问答、学习记录保存；调用模型会计费。
 
+总结笔记定制使用源码安装，并严格限定 DeepTutor v1.6.14。升级前先保留定制补丁与数据；其他版本不能直接运行 `CustomizeNotes` 强套。笔记数据位于 `DeepTutor-runtime/data/user/workspace/summary_notes`，也包含在完整 data 备份中。详见 [总结笔记维护说明](summary-notes.md)。
+
 本仓库不会自动跟踪开发分支或自动升级应用。修改端口后同时更新启动命令，并注意OpenMAIC浏览器数据按站点隔离。
 
 ## 卸载而保留数据

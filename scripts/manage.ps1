@@ -1,5 +1,5 @@
 param(
-  [ValidateSet('Check','Install','Configure','Start','Stop','Restart','DeepSeekPortal')][string]$Action = 'Check',
+  [ValidateSet('Check','Install','Configure','Start','Stop','Restart','DeepSeekPortal','CustomizeNotes')][string]$Action = 'Check',
   [ValidateSet('Both','DeepTutor','OpenMAIC')][string]$Project = 'Both',
   [string]$Root = (Join-Path $env:LOCALAPPDATA 'LearningSystems')
 )
@@ -34,8 +34,18 @@ function Get-DtOwned {
   $all = @(Get-CimInstance Win32_Process)
   $python = Join-Path $Root 'DeepTutor\.venv\Scripts\python.exe'
   $web = Join-Path $dtHome 'data\user\runtime\web\server.js'
+  $sourceWeb = Join-Path $Root 'DeepTutor\web\.next-deeptutor\standalone\server.js'
   $parents = @($all | Where-Object {$_.CommandLine -and $_.CommandLine.Contains($python) -and $_.CommandLine.Contains('deeptutor.api.main:app')} | Select-Object -ExpandProperty ProcessId)
-  @($all | Where-Object {$_.CommandLine -and (($_.CommandLine.Contains($python) -and $_.CommandLine.Contains('deeptutor.api.main:app')) -or ($_.CommandLine.Contains('deeptutor.api.main:app') -and $parents -contains $_.ParentProcessId) -or $_.CommandLine.Contains($web))})
+  @($all | Where-Object {$_.CommandLine -and (($_.CommandLine.Contains($python) -and $_.CommandLine.Contains('deeptutor.api.main:app')) -or ($_.CommandLine.Contains('deeptutor.api.main:app') -and $parents -contains $_.ParentProcessId) -or $_.CommandLine.Contains($web) -or $_.CommandLine.Contains($sourceWeb))})
+}
+function Install-Notes {
+  $source = Join-Path $Root 'DeepTutor'
+  Run-Native $dtPython @((Join-Path $PSScriptRoot 'prepare-notes.py'),'--source',$source)
+  Run-Native $dtPython @('-m','pip','install','beautifulsoup4>=4.15.0,<5','markdown-it-py>=3,<5')
+  Run-Native $dtPython @('-m','pip','install','--no-deps','-e',$source)
+  Push-Location (Join-Path $source 'web')
+  try { Run-Native npm @('ci','--legacy-peer-deps','--no-audit','--no-fund') } finally { Pop-Location }
+  Run-Native $dtPython @('-c','import shutil,sys; from pathlib import Path; from deeptutor.runtime.launcher import _ensure_source_production_build; _ensure_source_production_build(Path(sys.argv[1]),shutil.which("npm"),api_base="http://127.0.0.1:8001",auth_enabled=False)',(Join-Path $source 'web'))
 }
 function Install-One([string]$Name) {
   $dir = Join-Path $Root $Name
@@ -47,6 +57,7 @@ function Install-One([string]$Name) {
     New-Item -ItemType Directory -Path $dtHome -Force | Out-Null
     Run-Native $dt @('init','--home',$dtHome,'--non-interactive')
     Run-Native $dtPython @((Join-Path $PSScriptRoot 'prepare.py'),'--root',$Root,'--project','DeepTutor')
+    Install-Notes
   } else {
     Run-Native git @('clone','--depth','1','--branch','v1.1.4','https://github.com/THU-MAIC/OpenMAIC.git',$dir)
     Push-Location $dir
@@ -97,6 +108,13 @@ if($Action -eq 'Check') {
 }
 if($Action -eq 'DeepSeekPortal') {
   & (Join-Path $PSScriptRoot 'deepseek-shortcut.ps1') -Root $Root
+  return
+}
+if($Action -eq 'CustomizeNotes') {
+  Check-Tools
+  Stop-One 'DeepTutor'
+  Install-Notes
+  Write-Host 'Notes customization built. Use Start to launch DeepTutor.'
   return
 }
 if($Action -eq 'Install'){Check-Tools}

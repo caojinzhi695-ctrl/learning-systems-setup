@@ -1,0 +1,180 @@
+"use client";
+
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowUp, Plus, Paperclip, NotebookPen, PanelRight, X } from "lucide-react";
+import Image from "next/image";
+import { useTranslation } from "react-i18next";
+import MarkdownRenderer from "@/components/common/MarkdownRenderer";
+import { apiFetch, apiUrl } from "@/lib/api";
+
+type Turn = { id: string; message: string; notes: string; html: string; status: string; error: string; title?: string };
+type Session = { id: string; title: string; turns: Turn[] };
+type Entry = { id: string; title: string };
+
+async function request(path: string, init?: RequestInit) {
+  const response = await apiFetch(apiUrl(`/api/summary-notes${path}`), init);
+  const result = await response.json();
+  if (!response.ok) throw new Error(typeof result.detail === "string" ? result.detail : "请求失败，请检查服务状态。");
+  return result;
+}
+
+export default function SummaryNotesPage() {
+  const { t } = useTranslation();
+  const [sessions, setSessions] = useState<Entry[]>([]);
+  const [session, setSession] = useState<Session | null>(null);
+  const [message, setMessage] = useState("");
+  const [collectionOpen, setCollectionOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const activeRequest = useRef(false);
+  const messageInput = useRef<HTMLTextAreaElement>(null);
+  const selection = useRef(0);
+
+  const select = useCallback(async (id: string) => {
+    const version = ++selection.current;
+    setLoading(true); setError("");
+    try {
+      const data = await request(`/${id}`) as Session;
+      if (version !== selection.current) return;
+      setSession(data); localStorage.setItem("summary-notes-session", id);
+    } catch (e) { if (version === selection.current) setError(e instanceof Error ? e.message : "读取失败。"); }
+    finally { if (version === selection.current) setLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    void request("").then(async data => {
+      if (cancelled) return;
+      setSessions(data.sessions);
+      setCollectionOpen(window.matchMedia("(min-width: 1024px)").matches);
+      const saved = localStorage.getItem("summary-notes-session");
+      const id = data.sessions.find((item: Entry) => item.id === saved)?.id ?? data.sessions[0]?.id;
+      if (id) await select(id);
+      else setLoading(false);
+    }).catch(e => { if (!cancelled) { setError(e.message); setLoading(false); } });
+    // This ref is a request counter, not a DOM node; invalidate pending reads.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => { cancelled = true; selection.current++; };
+  }, [select]);
+
+  async function create() {
+    if (activeRequest.current) return;
+    setError(""); setLoading(true);
+    try {
+      const data = await request("", { method: "POST" }) as Session;
+      setSessions(items => [{ id: data.id, title: data.title }, ...items]);
+      setSession(data); setMessage("");
+      localStorage.setItem("summary-notes-session", data.id);
+    } catch (e) { setError(e instanceof Error ? e.message : "创建失败。"); }
+    finally { setLoading(false); }
+  }
+
+  async function generate() {
+    if (activeRequest.current || !message.trim() || !session) return;
+    activeRequest.current = true; setBusy(true); setError("");
+    try {
+      const data = await request(`/${session.id}/generate`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message, confirm_api_cost: true, request_id: crypto.randomUUID().replaceAll("-", "") }),
+      }) as Session;
+      setSession(data);
+      setCollectionOpen(true);
+      setSessions(items => items.map(item => item.id === data.id ? { id: data.id, title: data.title } : item));
+      setMessage("");
+    } catch (e) {
+      setError((e instanceof Error ? e.message : "请求中断。") + " 材料仍在输入框中。请先重新打开本聊天查看是否已有结果，避免重复提交。");
+    } finally { activeRequest.current = false; setBusy(false); }
+  }
+
+  async function importText(file?: File) {
+    if (!file) return;
+    if (!/\.(txt|md)$/i.test(file.name) || file.size > 240000) { setError("仅支持较小的 TXT/Markdown 文字材料；PDF、音视频请粘贴提取正文或转写。"); return; }
+    const text = await file.text();
+    if (text.length > 40000) { setError("单次材料最多4万字，请分篇整理。没有截断或发送材料。"); return; }
+    setMessage(text); setError("");
+  }
+
+  return <div className="flex h-full min-h-0 flex-col bg-[var(--background)]">
+    <header className="flex shrink-0 items-center gap-3 border-b border-[var(--border)] px-4 py-3 sm:px-6">
+      <h1 className="shrink-0 font-serif text-base font-semibold">{t("总结笔记")}</h1>
+      <select aria-label={t("选择笔记聊天")} disabled={busy || loading} value={session?.id ?? ""} onChange={e => { setMessage(""); void select(e.target.value); }} className="ml-auto min-w-0 max-w-[50%] truncate rounded-lg border-0 bg-transparent px-2 py-2 text-sm text-[var(--muted-foreground)] focus-visible:outline-2">
+        {!session && <option value="">{t("选择聊天")}</option>}
+        {sessions.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
+      </select>
+      <button type="button" aria-label={t("新建笔记聊天")} title={t("新建笔记聊天")} disabled={busy || loading} onClick={() => void create()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--muted)] focus-visible:outline-2 disabled:opacity-50"><Plus size={20} /></button>
+      <button type="button" aria-label={t("收集栏")} title={t("收集栏")} aria-expanded={collectionOpen} aria-controls="note-collection" onClick={() => setCollectionOpen(open => !open)} className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2 text-sm text-[var(--muted-foreground)] hover:bg-[var(--muted)] focus-visible:outline-2"><PanelRight size={18} /><span className="hidden sm:inline">{t("收集栏")}</span><span className="text-xs">{session?.turns.length || 0}</span></button>
+    </header>
+    <div className="relative flex min-h-0 flex-1 overflow-hidden">
+    <div className="flex min-w-0 flex-1 flex-col">
+    <main className="min-h-0 flex-1 overflow-y-auto">
+      <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col justify-center gap-8 px-5 py-10 sm:px-8 sm:pb-[12vh]">
+        <div className="flex items-center justify-center gap-3 sm:gap-4">
+          <Image src="/logo_black.png" alt="" width={44} height={44} className="h-9 w-9 shrink-0 select-none sm:h-11 sm:w-11" />
+          <h2 className="font-serif text-[clamp(26px,3vw,40px)] font-medium leading-tight tracking-tight">{t("今天想整理什么笔记？")}</h2>
+        </div>
+        {loading && <p role="status" className="text-center text-sm text-[var(--muted-foreground)]">{t("正在读取笔记聊天…")}</p>}
+        {error && <p role="alert" className="rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800">{error}</p>}
+        {!loading && !session && <button type="button" onClick={() => void create()} className="mx-auto rounded-full border border-[var(--border)] px-5 py-2.5 text-sm hover:bg-[var(--muted)]">{t("新建笔记聊天")}</button>}
+        {!loading && session && <>
+      <form className="w-full" onSubmit={e => { e.preventDefault(); void generate(); }}>
+        <div className="rounded-[28px] border border-[var(--border)] bg-[var(--card)] px-4 pb-3 pt-4 shadow-sm focus-within:border-[var(--primary)]/40">
+          <label className="sr-only" htmlFor="summary-note-message">{t("粘贴材料或继续提问")}</label>
+          <textarea ref={messageInput} id="summary-note-message" rows={2} maxLength={40000} required disabled={busy} value={message} onChange={e => setMessage(e.target.value)} placeholder={t("今天想整理什么笔记？粘贴材料即可开始…")} className="block max-h-40 min-h-24 w-full resize-none border-0 bg-transparent text-sm leading-7 outline-none" onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = `${Math.min(e.currentTarget.scrollHeight, 160)}px`; }} />
+          <div className="mt-2 flex items-center gap-3">
+            <span className="flex items-center gap-1.5 text-sm text-[var(--muted-foreground)]"><NotebookPen size={17} />{t("总结笔记")}</span>
+            <label title={t("导入 TXT／Markdown")} className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-[var(--muted-foreground)] hover:bg-[var(--muted)] ${busy ? "pointer-events-none opacity-50" : ""}`}>
+              <Paperclip size={19} /><span className="sr-only">{t("导入 TXT／Markdown")}</span>
+              <input aria-label={t("导入文字材料")} type="file" accept=".txt,.md,text/plain,text/markdown" disabled={busy} onChange={e => void importText(e.target.files?.[0])} className="sr-only" />
+            </label>
+            <button type="submit" aria-label={t("发送并生成笔记")} title={t("发送并生成笔记")} disabled={busy || !message.trim()} className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--foreground)] text-[var(--background)] focus-visible:outline-2 disabled:opacity-30"><ArrowUp size={19} /></button>
+          </div>
+        </div>
+
+      </form>
+        <div className="space-y-1 text-sm text-[var(--muted-foreground)]">
+          {[
+            ["整理一段阅读材料", "请根据以下阅读材料整理固定六章笔记，并生成 HTML：\n\n"],
+            ["优化已有笔记的结构", "请在忠实保留原意的前提下，优化这份笔记的结构：\n\n"],
+            ["按固定模板制作网页", "请整理以下笔记，并按照固定模板生成 HTML 网页：\n\n"],
+          ].map(([label, prompt]) => <button key={label} type="button" disabled={busy} onClick={() => { setMessage(prompt); messageInput.current?.focus(); }} className="flex w-full items-center gap-3 rounded-lg px-1 py-2 text-left hover:text-[var(--foreground)] focus-visible:outline-2 disabled:opacity-50"><span>{t(label)}</span><span aria-hidden className="text-[var(--primary)]">→</span></button>)}
+        </div>
+        </>}
+        {busy && <p role="status" className="animate-pulse text-center text-sm text-[var(--muted-foreground)]">{t("正在整理文字并制作网页…")}</p>}
+      </div>
+    </main>
+    </div>
+    {collectionOpen && <aside id="note-collection" aria-label={t("笔记收集栏")} className="absolute inset-y-0 right-0 z-20 flex w-[min(380px,92vw)] shrink-0 flex-col border-l border-[var(--border)] bg-[var(--background)] shadow-lg lg:static lg:w-[380px] lg:shadow-none">
+      <header className="flex shrink-0 items-center justify-between border-b border-[var(--border)] px-4 py-3">
+        <h2 className="text-sm font-semibold">{t("收集栏")} <span className="ml-1 text-xs font-normal text-[var(--muted-foreground)]">{session?.turns.length || 0}</span></h2>
+        <button type="button" aria-label={t("收起收集栏")} onClick={() => setCollectionOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-[var(--muted)] focus-visible:outline-2"><X size={17} /></button>
+      </header>
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
+        {!loading && session?.turns.map((turn, index) => <section key={turn.id} aria-label={`${t("笔记结果")} ${index + 1}`} className="space-y-3">
+          <details className="w-full rounded-2xl bg-[var(--muted)] px-4 py-3">
+            <summary className="cursor-pointer text-sm"><span className="inline-block max-w-[90%] truncate align-bottom">{turn.message.split("\n").find(line => line.trim()) || t("查看本次材料／修改要求")}</span></summary>
+            <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-words text-sm leading-6">{turn.message}</pre>
+          </details>
+          <div className="space-y-3 rounded-2xl border border-[var(--border)] px-4 py-4 ">
+            <div className="flex items-center gap-2 text-sm font-medium"><NotebookPen size={16} className="shrink-0 text-[var(--muted-foreground)]" /><span className="min-w-0 break-words">{turn.title || t("笔记结果")}</span><span className="ml-auto shrink-0 text-xs font-normal text-[var(--muted-foreground)]">{turn.status === "complete" ? t("已完成") : t("未完成")}</span></div>
+            {turn.status !== "complete" && <p role="status" className="text-sm text-amber-700">{turn.error || t("请求正在处理，请稍后重新打开本聊天查看。")}</p>}
+            {turn.notes && <details className="group rounded-lg bg-[var(--muted)]/40">
+              <summary className="cursor-pointer px-3 py-2.5 text-sm font-medium">{turn.status === "complete" ? t("文字笔记 · 点击展开") : t("文字草稿 · 点击展开")}</summary>
+              <div className="border-t border-[var(--border)] px-3 py-4 sm:px-4"><MarkdownRenderer content={turn.notes} allowHtml={false} enableImages={false} variant="prose" /></div>
+            </details>}
+            {turn.status === "complete" && <>
+              <details className="rounded-lg bg-[var(--muted)]/40"><summary className="cursor-pointer px-3 py-2.5 text-sm font-medium">{t("HTML 网页 · 点击预览")}</summary><iframe title={`${turn.title} HTML`} sandbox="" srcDoc={turn.html} className="h-[60vh] w-full rounded-b-lg border-t border-[var(--border)] bg-white" /></details>
+              <div className="flex flex-wrap gap-x-4 gap-y-2 pt-1 text-xs text-[var(--muted-foreground)]">
+                <a className="rounded py-1 hover:text-[var(--foreground)] hover:underline focus-visible:outline-2" href={apiUrl(`/api/summary-notes/${session.id}/turns/${turn.id}/download?format=md`)}>{t("下载文字笔记")}</a>
+                <a className="rounded py-1 hover:text-[var(--foreground)] hover:underline focus-visible:outline-2" href={apiUrl(`/api/summary-notes/${session.id}/turns/${turn.id}/download?format=html`)}>{t("下载 HTML 网页")}</a>
+              </div>
+            </>}
+          </div>
+        </section>)}
+
+        {!loading && !session?.turns.length && <p className="px-2 py-6 text-center text-sm text-[var(--muted-foreground)]">{t("输入的材料、文字笔记和网页会保存在这里。")}</p>}
+      </div>
+    </aside>}
+    </div>
+  </div>;
+}

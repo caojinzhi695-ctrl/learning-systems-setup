@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>固定 HTML 笔记模板</title>
+<link href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23f4f6f8'/%3E%3Cpath d='M9 8h14v16H9z' fill='%23ffffff' stroke='%230f766e' stroke-width='2'/%3E%3Cpath d='M13 13h6M13 17h6M13 21h4' stroke='%23155e75' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" rel="icon"/>
+<style>
+    /*
+      样式配置区：后续换主题时优先改这里。
+      建议只调整色彩、字号、宽度、圆角和阴影变量，保持结构类名不变。
+    */
+    :root {
+      color-scheme: light;
+      --page-bg: #f4f6f8;
+      --surface: #ffffff;
+      --surface-soft: #f8fafb;
+      --text: #1f2933;
+      --muted: #657281;
+      --subtle: #d9e1e8;
+      --line: #e6ebf0;
+      --accent: #0f766e;
+      --accent-strong: #155e75;
+      --accent-soft: #e6f4f1;
+      --accent-blue-soft: #edf5ff;
+      --warning-soft: #fff7e6;
+      --warning-line: #f3d08a;
+      --code-bg: #eef2f5;
+      --shadow: 0 16px 42px rgba(31, 41, 51, 0.08);
+      --radius: 8px;
+      --radius-sm: 6px;
+      --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", sans-serif;
+      --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      --content-width: 820px;
+      --toc-width: 232px;
+      --gap: 28px;
+      --base-size: 17px;
+      --line-height: 1.82;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 24px;
+    }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: var(--page-bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: var(--base-size);
+      line-height: var(--line-height);
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image: radial-gradient(circle at 1px 1px, rgba(15, 118, 110, 0.06) 1px, transparent 0);
+      background-size: 22px 22px;
+      opacity: 0.6;
+    }
+
+    a {
+      color: var(--accent-strong);
+      text-decoration-thickness: 0.08em;
+      text-underline-offset: 0.18em;
+      overflow-wrap: anywhere;
+    }
+
+    a:hover {
+      color: var(--accent);
+    }
+
+    :focus-visible {
+      outline: 3px solid rgba(15, 118, 110, 0.38);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    img {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      border-radius: var(--radius-sm);
+    }
+
+    .page-shell {
+      position: relative;
+      width: min(100% - 32px, 1180px);
+      margin: 0 auto;
+      padding: 36px 0 64px;
+    }
+
+    .note-layout {
+      display: grid;
+      grid-template-columns: minmax(0, var(--content-width)) var(--toc-width);
+      gap: var(--gap);
+      align-items: start;
+      justify-content: center;
+    }
+
+    .note-main {
+      min-width: 0;
+    }
+
+    .note-hero,
+    .content-card,
+    .summary-card,
+    .mobile-toc {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .note-hero {
+      padding: clamp(26px, 5vw, 44px);
+      margin-bottom: 18px;
+    }
+
+    .template-label {
+      display: inline-flex;
+      width: fit-content;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 16px;
+      padding: 4px 10px;
+      border: 1px solid rgba(15, 118, 110, 0.28);
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+      font-size: 0.78rem;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .note-title {
+      margin: 0;
+      color: #17212b;
+      font-size: clamp(2rem, 4.8vw, 3.2rem);
+      line-height: 1.16;
+      font-weight: 760;
+      letter-spacing: 0;
+      overflow-wrap: anywhere;
+    }
+
+    .note-intro {
+      max-width: 66ch;
+      margin: 18px 0 0;
+      color: var(--muted);
+      font-size: 1.05rem;
+    }
+
+    .note-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 10px;
+      margin-top: 22px;
+      padding: 0;
+      list-style: none;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .note-meta li,
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 3px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--surface-soft);
+      line-height: 1.45;
+    }
+
+    .summary-card {
+      margin-bottom: 18px;
+      padding: 22px 24px;
+      border-left: 5px solid var(--accent);
+    }
+
+    .summary-card h2 {
+      margin: 0 0 10px;
+      font-size: 1.08rem;
+      line-height: 1.35;
+    }
+
+    .summary-card p {
+      margin: 0;
+      color: #344352;
+    }
+
+    .mobile-toc {
+      display: none;
+      margin-bottom: 18px;
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .mobile-toc summary {
+      cursor: pointer;
+      padding: 14px 18px;
+      color: #20303d;
+      font-weight: 700;
+      list-style-position: inside;
+    }
+
+    .mobile-toc[open] summary {
+      border-bottom: 1px solid var(--line);
+    }
+
+    .toc-list {
+      margin: 0;
+      padding: 10px 16px 16px;
+      list-style: none;
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+
+    .toc-list li + li {
+      margin-top: 7px;
+    }
+
+    .toc-list a {
+      display: block;
+      padding: 6px 8px;
+      border-radius: var(--radius-sm);
+      color: #4a5968;
+      text-decoration: none;
+    }
+
+    .toc-list a:hover,
+    .toc-list a[aria-current="true"] {
+      background: var(--accent-soft);
+      color: var(--accent-strong);
+    }
+
+    .toc-list .toc-h3 a {
+      padding-left: 20px;
+      font-size: 0.88rem;
+      color: #617080;
+    }
+
+    .side-toc {
+      position: sticky;
+      top: 24px;
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 30px rgba(31, 41, 51, 0.06);
+      backdrop-filter: blur(8px);
+    }
+
+    .side-toc h2 {
+      margin: 0 0 6px;
+      color: #263544;
+      font-size: 0.95rem;
+      line-height: 1.3;
+    }
+
+    .side-toc .toc-list {
+      padding: 0;
+    }
+
+    .content-card {
+      padding: clamp(24px, 4vw, 42px);
+      overflow: hidden;
+    }
+
+    .note-content {
+      max-width: 100%;
+      overflow-wrap: break-word;
+    }
+
+    .note-content section {
+      scroll-margin-top: 24px;
+    }
+
+    .note-content section + section {
+      margin-top: 34px;
+      padding-top: 28px;
+      border-top: 1px solid var(--line);
+    }
+
+    .note-content h2,
+    .note-content h3,
+    .note-content h4 {
+      color: #17212b;
+      letter-spacing: 0;
+      scroll-margin-top: 24px;
+    }
+
+    .note-content h2 {
+      margin: 0 0 16px;
+      font-size: clamp(1.45rem, 3vw, 1.9rem);
+      line-height: 1.32;
+    }
+
+    .note-content h3 {
+      margin: 26px 0 10px;
+      font-size: 1.18rem;
+      line-height: 1.4;
+    }
+
+    .note-content h4 {
+      margin: 20px 0 8px;
+      font-size: 1.02rem;
+      line-height: 1.45;
+    }
+
+    .note-content p,
+    .note-content ul,
+    .note-content ol,
+    .note-content blockquote,
+    .note-content .module {
+      margin-top: 0;
+      margin-bottom: 18px;
+    }
+
+    .note-content p {
+      max-width: 72ch;
+    }
+
+    .note-content ul,
+    .note-content ol {
+      padding-left: 1.35em;
+    }
+
+    .note-content li + li {
+      margin-top: 0.34em;
+    }
+
+    .note-content strong {
+      color: #14212d;
+      font-weight: 760;
+    }
+
+    .term {
+      padding: 0.05em 0.38em;
+      border-radius: 5px;
+      background: var(--accent-blue-soft);
+      color: #16466a;
+      font-weight: 700;
+    }
+
+    .note-content blockquote {
+      max-width: 72ch;
+      margin-left: 0;
+      padding: 4px 0 4px 18px;
+      border-left: 4px solid var(--subtle);
+      color: #526171;
+    }
+
+    code {
+      padding: 0.12em 0.34em;
+      border-radius: 4px;
+      background: var(--code-bg);
+      font-family: var(--font-mono);
+      font-size: 0.88em;
+      word-break: break-word;
+    }
+
+    .module {
+      max-width: 100%;
+      padding: 18px 20px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface-soft);
+    }
+
+    .module h3,
+    .module h4 {
+      margin-top: 0;
+    }
+
+    .callout {
+      border-color: rgba(15, 118, 110, 0.24);
+      border-left: 5px solid var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .callout.warning {
+      border-color: var(--warning-line);
+      border-left-color: #b7791f;
+      background: var(--warning-soft);
+    }
+
+    .case-box {
+      background: #fbfcfd;
+    }
+
+    .steps {
+      counter-reset: step;
+      display: grid;
+      gap: 12px;
+      margin: 0 0 20px;
+      padding: 0;
+      list-style: none;
+    }
+
+    .steps li {
+      counter-increment: step;
+      position: relative;
+      padding: 14px 16px 14px 54px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 16px;
+      top: 16px;
+      display: grid;
+      width: 26px;
+      height: 26px;
+      place-items: center;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+
+    .table-wrap {
+      max-width: 100%;
+      margin: 16px 0 20px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+    }
+
+    table {
+      width: 100%;
+      min-width: 620px;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+      line-height: 1.55;
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f3f7fa;
+      color: #20303d;
+      font-weight: 760;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .mindmap-wrap {
+      max-width: 100%;
+      margin: 16px 0 22px;
+      overflow-x: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, #fbfcfd 0%, #f7fbfa 100%);
+    }
+
+    .mindmap {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(190px, 1fr) minmax(150px, 0.75fr) minmax(190px, 1fr);
+      gap: 16px;
+      align-items: center;
+      min-width: 680px;
+      padding: 20px;
+    }
+
+    .mindmap > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .mindmap ul {
+      display: grid;
+      gap: 12px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .mindmap-node {
+      position: relative;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: 0 8px 20px rgba(31, 41, 51, 0.04);
+      line-height: 1.55;
+    }
+
+    .mindmap-node strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .mindmap-node span {
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .mindmap-node[data-branch="input"] {
+      border-color: rgba(21, 94, 117, 0.32);
+      box-shadow: inset 4px 0 0 #155e75, 0 8px 20px rgba(31, 41, 51, 0.04);
+    }
+
+    .mindmap-node[data-branch="structure"] {
+      border-color: rgba(15, 118, 110, 0.32);
+      box-shadow: inset 4px 0 0 #0f766e, 0 8px 20px rgba(31, 41, 51, 0.04);
+    }
+
+    .mindmap-node[data-branch="reading"] {
+      border-color: rgba(37, 99, 235, 0.28);
+      box-shadow: inset 4px 0 0 #2563eb, 0 8px 20px rgba(31, 41, 51, 0.04);
+    }
+
+    .mindmap-node[data-branch="check"] {
+      border-color: rgba(180, 83, 9, 0.30);
+      box-shadow: inset 4px 0 0 #b45309, 0 8px 20px rgba(31, 41, 51, 0.04);
+    }
+
+    .mindmap-center {
+      display: grid;
+      min-height: 126px;
+      place-items: center;
+      padding: 18px;
+      border: 2px solid rgba(15, 118, 110, 0.38);
+      background: var(--accent-soft);
+      color: #123b38;
+      text-align: center;
+      font-size: 1.05rem;
+    }
+
+    .mindmap-branch-left .mindmap-node::after,
+    .mindmap-branch-right .mindmap-node::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 16px;
+      border-top: 1px solid var(--subtle);
+    }
+
+    .mindmap-branch-left .mindmap-node::after {
+      right: -17px;
+    }
+
+    .mindmap-branch-right .mindmap-node::before {
+      left: -17px;
+    }
+
+    .review-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin: 14px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .review-list li {
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .is-empty,
+    [hidden] {
+      display: none !important;
+    }
+
+    @media (max-width: 1080px) {
+      .note-layout {
+        grid-template-columns: minmax(0, var(--content-width));
+      }
+
+      .side-toc {
+        display: none;
+      }
+
+      .mobile-toc {
+        display: block;
+      }
+    }
+
+    @media (max-width: 640px) {
+      :root {
+        --base-size: 16px;
+        --line-height: 1.78;
+      }
+
+      .page-shell {
+        width: min(100% - 24px, 1180px);
+        padding: 18px 0 42px;
+      }
+
+      .note-hero,
+      .content-card,
+      .summary-card {
+        box-shadow: 0 8px 24px rgba(31, 41, 51, 0.06);
+      }
+
+      .note-meta {
+        gap: 7px;
+      }
+
+      .content-card {
+        padding: 22px 18px;
+      }
+
+      .note-content section + section {
+        margin-top: 28px;
+        padding-top: 22px;
+      }
+
+      .module {
+        padding: 16px;
+      }
+
+      .review-list {
+        grid-template-columns: 1fr;
+      }
+
+      .steps li {
+        padding-right: 14px;
+      }
+
+      .mindmap {
+        min-width: 640px;
+        padding: 16px;
+      }
+    }
+
+    @media print {
+      :root {
+        --page-bg: #ffffff;
+        --surface: #ffffff;
+        --text: #111827;
+        --shadow: none;
+      }
+
+      body {
+        background: #fff;
+        font-size: 12pt;
+      }
+
+      body::before,
+      .side-toc,
+      .mobile-toc,
+      .template-label {
+        display: none !important;
+      }
+
+      .page-shell {
+        width: 100%;
+        padding: 0;
+      }
+
+      .note-layout {
+        display: block;
+      }
+
+      .note-hero,
+      .content-card,
+      .summary-card,
+      .module,
+      .table-wrap {
+        border-color: #d5dbe1;
+        box-shadow: none;
+      }
+
+      .note-hero,
+      .content-card {
+        padding: 0;
+        border: 0;
+      }
+
+      .summary-card,
+      .module {
+        break-inside: avoid;
+      }
+
+      .mindmap-wrap {
+        overflow: visible;
+        break-inside: avoid;
+      }
+
+      h1,
+      h2,
+      h3 {
+        break-after: avoid;
+      }
+
+      a {
+        color: inherit;
+        text-decoration: underline;
+      }
+    }
+
+    /* 调整 1：章节分色，保留原有正文与内部模块。 */
+    .content-card.note-content { padding: 0; border: 0; background: transparent; box-shadow: none; overflow: visible; }
+    .note-content > section {
+      --section-color: #c9864a; --section-soft: #fbf2e8;
+      position: relative; padding: clamp(22px, 4vw, 34px);
+      border: 1px solid var(--line); border-left: 6px solid var(--section-color);
+      border-radius: 18px; background: linear-gradient(180deg, var(--section-soft), #fffdf9 160px);
+      box-shadow: var(--shadow); counter-increment: note-section;
+    }
+    .note-content { counter-reset: note-section; }
+    .note-content > section + section { margin-top: 18px; }
+    .note-content > section:nth-of-type(4n+2) { --section-color: #4f8f82; --section-soft: #eef7f4; }
+    .note-content > section:nth-of-type(4n+3) { --section-color: #4f6f9f; --section-soft: #f0f4fb; }
+    .note-content > section:nth-of-type(4n+4) { --section-color: #8c7ab8; --section-soft: #f3f0f8; }
+    .note-content > section > h2 { display: flex; align-items: baseline; gap: 12px; }
+    .note-content > section > h2::before {
+      content: counter(note-section); display: inline-grid; place-items: center;
+      width: 32px; height: 32px; flex: 0 0 32px; align-self: flex-start;
+      border-radius: 50%; background: var(--section-color); color: white;
+      font-size: 16px; line-height: 1; font-weight: 800;
+    }
+    /* 调整 2：横向模块导航，链接由正文二级标题自动生成。 */
+    .module-nav { position: sticky; top: 0; z-index: 5; margin-bottom: 18px; padding: 10px;
+      border: 1px solid var(--line); border-radius: 18px; background: rgba(255,253,249,.94);
+      backdrop-filter: blur(10px); box-shadow: var(--shadow); }
+    .module-nav nav { display: flex; flex-wrap: wrap; gap: 8px; }
+    .module-nav a { display: inline-flex; align-items: center; padding: 6px 12px;
+      border: 1px solid var(--line); border-radius: 999px; background: white;
+      color: #3f4654; font-size: .9rem; font-weight: 760; text-decoration: none; }
+    .module-nav a:hover, .module-nav a[aria-current="true"] { background: #eef7f4; color: #315f58; border-color: #b9d6cc; }
+    .note-content h2, .note-content h3, .note-content section { scroll-margin-top: var(--nav-offset, 100px); }
+    /* 调整 3：顶部标题、核心问题、简介和元信息。 */
+    .note-hero { position: relative; isolation: isolate; overflow: hidden; border-radius: 26px;
+      background: linear-gradient(90deg, rgba(79,143,130,.075), transparent 38%),
+      radial-gradient(circle at 90% 20%, rgba(201,134,74,.105), transparent 24%), #fffdf9; }
+    .note-hero::after { content: ""; position: absolute; z-index: -1; right: 24px; bottom: -48px;
+      width: 190px; height: 190px; border-radius: 48%; transform: rotate(-8deg);
+      background: repeating-linear-gradient(45deg, rgba(255,255,255,.55) 0 12px, transparent 12px 18px),
+      linear-gradient(135deg, rgba(79,111,159,.1), rgba(140,122,184,.1)); }
+    .note-hero .template-label { background: #fbf2e8; border-color: rgba(201,134,74,.24); color: #8a5b31; }
+    .learning-question { margin: 18px 0 0; padding: 15px 18px; border-left: 5px solid #4f8f82;
+      border-radius: 0 12px 12px 0; background: rgba(238,247,244,.88); color: #315f58; font-weight: 720; }
+    .note-hero .note-meta li { background: rgba(255,255,255,.8); }
+    @media (max-width: 760px) {
+      .module-nav nav { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 2px; }
+      .module-nav a { flex: 0 0 auto; }
+      .note-hero::after { opacity: .45; right: -38px; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    @media print {
+      .module-nav { display: none !important; }
+      .note-hero::after { display: none; }
+      .note-content > section { background: white; box-shadow: none; }
+    }
+  </style>
+<style>
+/* 思维导图沿用模板模块样式，以两列层级卡片呈现。 */
+.reading-map { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 14px; }
+.note-content .map-branch { margin: 0; background: rgba(255,255,255,.8); }
+.map-branch h3 { font-size: 1.1rem; }
+.map-branch ul ul { color: var(--muted); font-size: .92rem; margin-bottom: 8px; }
+@media(max-width:760px) { .reading-map { grid-template-columns: 1fr; } }
+</style><!--固定模板使用规则：替换示例内容，不改样式和目录脚本；顶部信息不在阅读概览重复；核心摘要只出现一次；材料不足时删去相应模块，不编造；新增或删除章节后，导航和目录随标题自动生成。--></head>
+<body>
+<div class="page-shell">
+<div class="note-layout">
+<main class="note-main">
+<!-- 标题区：没有简介、标签、来源或日期时，可删除对应元素，脚本会隐藏空字段。 -->
+<header class="note-hero">
+<p class="template-label">模板示例 · 非正式笔记</p>
+<h1 class="note-title">在这里填写笔记标题</h1>
+<!-- 核心问题：替换成这篇笔记要解决的问题；没有时可删除。 -->
+<p class="learning-question" data-optional="">核心问题：这篇材料要解决什么问题？我希望通过阅读搞懂什么？</p>
+<p class="note-intro" data-optional="">在这里填写简短简介，说明笔记主题、整理范围和阅读重点。</p>
+<ul aria-label="笔记元信息" class="note-meta"><li data-optional="">作者 / 主讲人：填写姓名</li><li data-optional="">书籍 / 课程：填写名称</li><li data-optional="">来源：填写材料来源</li><li data-optional="">整理日期：填写日期</li></ul>
+</header>
+<div class="module-nav" id="module-nav">
+<nav aria-label="页面模块导航" id="module-nav-links"><a href="#overview">一、阅读概览</a><a href="#ideas">二、核心观点与论证</a><a href="#concepts">三、关键概念与方法</a><a href="#mindmap">四、结构化思维导图</a><a href="#reflection">五、阅读思考</a><a href="#practice">六、实践与复习</a></nav>
+</div>
+<!-- 核心摘要：短笔记可删除整个 summary-card。 -->
+<section aria-labelledby="summary-title" class="summary-card">
+<h2 id="summary-title">核心摘要</h2>
+<p>用一至两句话概括材料的核心结论。这里作为全篇摘要，正文中不再重复相同的一句话总结。</p>
+</section>
+<!-- 移动端目录：由脚本从正文 h2/h3 自动生成。短文无标题时会自动隐藏。 -->
+<details class="mobile-toc" id="mobile-toc">
+<summary>目录</summary>
+<nav aria-label="移动端目录">
+<ol class="toc-list" id="mobile-toc-list"><li class="toc-h2"><a href="#overview">一、阅读概览</a></li><li class="toc-h3"><a href="#note-heading-2">逻辑主线</a></li><li class="toc-h2"><a href="#ideas">二、核心观点与论证</a></li><li class="toc-h3"><a href="#note-heading-4">1. 核心观点标题</a></li><li class="toc-h2"><a href="#concepts">三、关键概念与方法</a></li><li class="toc-h3"><a href="#note-heading-6">1. 理解全文所需的概念</a></li><li class="toc-h3"><a href="#note-heading-7">2. 容易混淆的概念</a></li><li class="toc-h3"><a href="#note-heading-8">3. 本篇提供了什么方法？</a></li><li class="toc-h2"><a href="#mindmap">四、结构化思维导图</a></li><li class="toc-h3"><a href="#note-heading-10">一、问题与背景</a></li><li class="toc-h3"><a href="#note-heading-11">二、核心观点</a></li><li class="toc-h3"><a href="#note-heading-12">三、概念与方法</a></li><li class="toc-h3"><a href="#note-heading-13">四、限制与复习</a></li><li class="toc-h2"><a href="#reflection">五、阅读思考</a></li><li class="toc-h3"><a href="#note-heading-15">1. 带来的新理解</a></li><li class="toc-h3"><a href="#note-heading-16">2. 需要进一步验证的观点</a></li><li class="toc-h3"><a href="#note-heading-17">3. 与已有知识的联系</a></li><li class="toc-h3"><a href="#note-heading-18">4. 值得继续思考的问题</a></li><li class="toc-h2"><a href="#practice">六、实践与复习</a></li><li class="toc-h3"><a href="#note-heading-20">1. 三个可执行的小行动</a></li><li class="toc-h3"><a href="#note-heading-21">2. 五条以内的复习要点</a></li><li class="toc-h3"><a href="#note-heading-22">3. 100—150字快速回顾</a></li></ol>
+</nav>
+</details>
+<article class="content-card note-content" id="note-content"><section aria-labelledby="overview"><h2 id="overview">一、阅读概览</h2><h3 id="note-heading-2">逻辑主线</h3><p>写清材料从什么问题出发，如何展开论证，最后落到什么结论。标题、作者、课程、来源和核心问题只放在顶部，不在这里重复。</p></section><section aria-labelledby="ideas"><h2 id="ideas">二、核心观点与论证</h2><h3 id="note-heading-4">1. 核心观点标题</h3><div class="module callout"><h4>核心观点｜材料观点</h4><p>准确概括这一观点，不改变原意。</p></div><h4>解释与依据</h4><ul><li>写清作者的解释、论据或案例。</li><li>区分事实、个人经历、类比和作者判断。</li></ul><h4>关联关系</h4><p>说明这一观点与前后观点之间的因果、递进或对照关系。</p><h4>适用条件</h4><p>记录适用范围、限制与材料未展开的部分。</p><p data-optional="">原文位置：填写材料已有的章节名或位置；没有时删除，不编造。</p><!-- 有更多观点时，复制从 h3 到原文位置的这一组内容。 --></section><section aria-labelledby="concepts"><h2 id="concepts">三、关键概念与方法</h2><h3 id="note-heading-6">1. 理解全文所需的概念</h3><div aria-label="概念解释表" class="table-wrap" role="region" tabindex="0"><table><thead><tr><th scope="col">概念</th><th scope="col">在本文中的含义</th></tr></thead><tbody><tr><td>概念名称</td><td>根据材料解释概念，不自行补成作者结论。</td></tr></tbody></table></div><h3 id="note-heading-7">2. 容易混淆的概念</h3><div aria-label="概念区分表" class="table-wrap" role="region" tabindex="0"><table><thead><tr><th scope="col">概念区分</th><th scope="col">核心差异</th></tr></thead><tbody><tr><td>概念 A 与概念 B</td><td>写清两者的边界和区别。</td></tr></tbody></table></div><h3 id="note-heading-8">3. 本篇提供了什么方法？</h3><p>先说明材料提供的是完整流程、若干做法，还是仅有分析框架。没有方法时明确说明或删除这一小节。</p><ol class="steps"><li>方法一：填写材料明确提供的做法与条件。</li><li>方法二：填写材料明确提供的做法与条件。</li></ol></section><section aria-labelledby="mindmap"><h2 id="mindmap">四、结构化思维导图</h2><div class="module callout"><h4>中心主题</h4><p>填写笔记的中心问题或核心主题。</p></div><div class="reading-map"><div class="module map-branch"><h3 id="note-heading-10">一、问题与背景</h3><ul><li><strong>核心问题</strong><ul><li>材料为什么提出这个问题？</li></ul></li><li><strong>观察角度</strong><ul><li>作者用什么视角分析？</li></ul></li></ul></div><div class="module map-branch"><h3 id="note-heading-11">二、核心观点</h3><ul><li><strong>主要结论</strong><ul><li>解释与依据。</li></ul></li><li><strong>观点关系</strong><ul><li>因果、递进或对照。</li></ul></li></ul></div><div class="module map-branch"><h3 id="note-heading-12">三、概念与方法</h3><ul><li><strong>关键概念</strong><ul><li>定义与边界。</li></ul></li><li><strong>具体做法</strong><ul><li>材料提供的方法和条件。</li></ul></li></ul></div><div class="module map-branch"><h3 id="note-heading-13">四、限制与复习</h3><ul><li><strong>适用范围</strong><ul><li>哪些内容不能直接推及其他情形？</li></ul></li><li><strong>复习重点</strong><ul><li>最值得记住的内容。</li></ul></li></ul></div></div></section><section aria-labelledby="reflection"><h2 id="reflection">五、阅读思考</h2><div class="module callout warning"><h4>延伸思考</h4><p>本模块为阅读后的理解与提问，不属于材料原有结论。</p></div><h3 id="note-heading-15">1. 带来的新理解</h3><p>用自己的话说明这份材料改变了什么理解。</p><h3 id="note-heading-16">2. 需要进一步验证的观点</h3><ul><li>哪些观点的证据或适用条件还需要查证？</li></ul><h3 id="note-heading-17">3. 与已有知识的联系</h3><p>明确标注辅助联系，避免把自己的联想写成作者观点。</p><h3 id="note-heading-18">4. 值得继续思考的问题</h3><ul><li>根据材料提出一个值得继续追问的问题。</li></ul></section><section aria-labelledby="practice"><h2 id="practice">六、实践与复习</h2><h3 id="note-heading-20">1. 三个可执行的小行动</h3><p>以下为依据材料提出的实践建议；如非作者原有步骤，应明确区分。</p><div aria-label="实践行动表" class="table-wrap" role="region" tabindex="0"><table><thead><tr><th scope="col">小行动</th><th scope="col">具体做法</th><th scope="col">对应材料观点</th></tr></thead><tbody><tr><td>行动一</td><td>填写具体、可执行的小行动。</td><td>写明对应观点。</td></tr><tr><td>行动二</td><td>填写具体、可执行的小行动。</td><td>写明对应观点。</td></tr><tr><td>行动三</td><td>填写具体、可执行的小行动。</td><td>写明对应观点。</td></tr></tbody></table></div><h3 id="note-heading-21">2. 五条以内的复习要点</h3><ol class="review-list"><li>填写最重要的结论。</li><li>填写关键概念或区别。</li><li>填写方法、适用条件或易错点。</li></ol><h3 id="note-heading-22">3. 100—150字快速回顾</h3><p>用100—150字串起核心问题、主要观点、关键方法和适用边界，不引入新结论。</p></section></article>
+</main>
+<!-- 桌面端目录：由脚本自动生成。 -->
+<aside class="side-toc" id="side-toc">
+<h2>目录</h2>
+<nav aria-label="桌面端目录">
+<ol class="toc-list" id="side-toc-list"><li class="toc-h2"><a href="#overview">一、阅读概览</a></li><li class="toc-h3"><a href="#note-heading-2">逻辑主线</a></li><li class="toc-h2"><a href="#ideas">二、核心观点与论证</a></li><li class="toc-h3"><a href="#note-heading-4">1. 核心观点标题</a></li><li class="toc-h2"><a href="#concepts">三、关键概念与方法</a></li><li class="toc-h3"><a href="#note-heading-6">1. 理解全文所需的概念</a></li><li class="toc-h3"><a href="#note-heading-7">2. 容易混淆的概念</a></li><li class="toc-h3"><a href="#note-heading-8">3. 本篇提供了什么方法？</a></li><li class="toc-h2"><a href="#mindmap">四、结构化思维导图</a></li><li class="toc-h3"><a href="#note-heading-10">一、问题与背景</a></li><li class="toc-h3"><a href="#note-heading-11">二、核心观点</a></li><li class="toc-h3"><a href="#note-heading-12">三、概念与方法</a></li><li class="toc-h3"><a href="#note-heading-13">四、限制与复习</a></li><li class="toc-h2"><a href="#reflection">五、阅读思考</a></li><li class="toc-h3"><a href="#note-heading-15">1. 带来的新理解</a></li><li class="toc-h3"><a href="#note-heading-16">2. 需要进一步验证的观点</a></li><li class="toc-h3"><a href="#note-heading-17">3. 与已有知识的联系</a></li><li class="toc-h3"><a href="#note-heading-18">4. 值得继续思考的问题</a></li><li class="toc-h2"><a href="#practice">六、实践与复习</a></li><li class="toc-h3"><a href="#note-heading-20">1. 三个可执行的小行动</a></li><li class="toc-h3"><a href="#note-heading-21">2. 五条以内的复习要点</a></li><li class="toc-h3"><a href="#note-heading-22">3. 100—150字快速回顾</a></li></ol>
+</nav>
+</aside>
+</div>
+</div>
+<script>
+    /*
+      脚本区：只负责隐藏空字段、生成目录和高亮当前位置。
+      离线可用，不依赖 CDN 或外部接口。
+    */
+    (function () {
+      var optionalNodes = document.querySelectorAll("[data-optional]");
+      optionalNodes.forEach(function (node) {
+        if (!node.textContent.trim()) {
+          node.classList.add("is-empty");
+        }
+      });
+
+      var content = document.getElementById("note-content");
+      var headings = Array.prototype.slice.call(content.querySelectorAll("h2, h3"));
+      var sideToc = document.getElementById("side-toc");
+      var mobileToc = document.getElementById("mobile-toc");
+      var sideList = document.getElementById("side-toc-list");
+      var mobileList = document.getElementById("mobile-toc-list");
+
+      sideList.replaceChildren();
+      mobileList.replaceChildren();
+      document.getElementById("module-nav-links").replaceChildren();
+
+      function slugify(text, index) {
+        return "note-heading-" + index + "-" + text.trim()
+          .toLowerCase()
+          .replace(/[^\w\u4e00-\u9fa5]+/g, "-")
+          .replace(/^-+|-+$/g, "");
+      }
+
+      if (!headings.length) {
+        sideToc.hidden = true;
+        mobileToc.hidden = true;
+        return;
+      }
+
+      headings.forEach(function (heading, index) {
+        if (!heading.id) {
+          heading.id = slugify(heading.textContent, index + 1);
+        }
+
+        var item = document.createElement("li");
+        item.className = heading.tagName.toLowerCase() === "h3" ? "toc-h3" : "toc-h2";
+
+        var link = document.createElement("a");
+        link.href = "#" + heading.id;
+        link.textContent = heading.textContent;
+        item.appendChild(link);
+
+        sideList.appendChild(item.cloneNode(true));
+        mobileList.appendChild(item);
+      });
+
+      var moduleNav = document.getElementById("module-nav");
+      var moduleLinks = document.getElementById("module-nav-links");
+      headings.filter(function (heading) { return heading.tagName === "H2"; }).forEach(function (heading) {
+        var link = document.createElement("a");
+        link.href = "#" + heading.id;
+        link.textContent = heading.textContent;
+        moduleLinks.appendChild(link);
+      });
+      moduleNav.hidden = !moduleLinks.children.length;
+      function syncNavOffset() {
+        document.documentElement.style.setProperty("--nav-offset", (moduleNav.offsetHeight + 24) + "px");
+      }
+      syncNavOffset();
+      if (window.ResizeObserver) { new ResizeObserver(syncNavOffset).observe(moduleNav); }
+      window.addEventListener("resize", syncNavOffset);
+
+      var tocLinks = Array.prototype.slice.call(document.querySelectorAll(".toc-list a, .module-nav a"));
+      var observer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) {
+            return;
+          }
+
+          tocLinks.forEach(function (link) {
+            link.removeAttribute("aria-current");
+          });
+
+          var activeLinks = document.querySelectorAll('.toc-list a[href="#' + entry.target.id + '"], .module-nav a[href="#' + entry.target.id + '"]');
+          var section = entry.target.closest("section");
+          var sectionHeading = section && section.querySelector("h2");
+          if (sectionHeading) {
+            var sectionLink = Array.prototype.find.call(moduleLinks.children, function (link) {
+              return link.getAttribute("href") === "#" + sectionHeading.id;
+            });
+            if (sectionLink) { sectionLink.setAttribute("aria-current", "true"); }
+          }
+          activeLinks.forEach(function (link) {
+            link.setAttribute("aria-current", "true");
+          });
+        });
+      }, {
+        rootMargin: "-20% 0px -70% 0px",
+        threshold: 0.01
+      });
+
+      headings.forEach(function (heading) {
+        observer.observe(heading);
+      });
+    })();
+  </script>
+</body>
+</html>
