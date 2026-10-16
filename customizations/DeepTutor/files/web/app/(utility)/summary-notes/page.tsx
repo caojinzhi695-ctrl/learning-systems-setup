@@ -158,16 +158,21 @@ export default function SummaryNotesPage() {
           <div className="space-y-3 rounded-2xl border border-[var(--border)] px-4 py-4 ">
             <div className="flex items-center gap-2 text-sm font-medium"><NotebookPen size={16} className="shrink-0 text-[var(--muted-foreground)]" /><span className="min-w-0 break-words">{turn.title || t("笔记结果")}</span><span className="ml-auto shrink-0 text-xs font-normal text-[var(--muted-foreground)]">{turn.status === "complete" ? t("已完成") : t("未完成")}</span></div>
             {turn.status !== "complete" && <p role="status" className="text-sm text-amber-700">{turn.error || t("请求正在处理，请稍后重新打开本聊天查看。")}</p>}
+            {turn.status === "complete" && <>
+              <div className="grid grid-cols-1 gap-2 border-b border-[var(--border)] pb-3 sm:grid-cols-3">
+                <a className="flex min-h-11 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-center text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2" href={apiUrl(`/api/summary-notes/${session.id}/turns/${turn.id}/download?format=md`)}>{t("下载文字笔记")}</a>
+                <a className="flex min-h-11 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-center text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2" href={apiUrl(`/api/summary-notes/${session.id}/turns/${turn.id}/download?format=html`)}>{t("下载 HTML 网页")}</a>
+                <a className="flex min-h-11 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-center text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2" href={apiUrl(`/api/summary-notes/${session.id}/turns/${turn.id}/download?format=enex`)}>{t("导出到印象笔记")}</a>
+                <p className="text-xs leading-5 text-[var(--muted-foreground)] sm:col-span-3">{t("下载 ENEX 后在印象笔记桌面端导入，顶部附有 HTML 网页文件；重复导入会新增笔记。")}</p>
+              </div>
+            </>}
             {turn.notes && <details className="group rounded-lg bg-[var(--muted)]/40">
               <summary className="cursor-pointer px-3 py-2.5 text-sm font-medium">{turn.status === "complete" ? t("文字笔记 · 点击展开") : t("文字草稿 · 点击展开")}</summary>
               <div className="border-t border-[var(--border)] px-3 py-4 sm:px-4"><MarkdownRenderer content={turn.notes} allowHtml={false} enableImages={false} variant="prose" /></div>
             </details>}
             {turn.status === "complete" && <>
               <details className="rounded-lg bg-[var(--muted)]/40"><summary className="cursor-pointer px-3 py-2.5 text-sm font-medium">{t("HTML 网页 · 点击预览")}</summary><iframe title={`${turn.title} HTML`} sandbox="" srcDoc={turn.html} className="h-[60vh] w-full rounded-b-lg border-t border-[var(--border)] bg-white" /></details>
-              <div className="flex flex-wrap gap-x-4 gap-y-2 pt-1 text-xs text-[var(--muted-foreground)]">
-                <a className="rounded py-1 hover:text-[var(--foreground)] hover:underline focus-visible:outline-2" href={apiUrl(`/api/summary-notes/${session.id}/turns/${turn.id}/download?format=md`)}>{t("下载文字笔记")}</a>
-                <a className="rounded py-1 hover:text-[var(--foreground)] hover:underline focus-visible:outline-2" href={apiUrl(`/api/summary-notes/${session.id}/turns/${turn.id}/download?format=html`)}>{t("下载 HTML 网页")}</a>
-              </div>
+
             </>}
           </div>
         </section>)}

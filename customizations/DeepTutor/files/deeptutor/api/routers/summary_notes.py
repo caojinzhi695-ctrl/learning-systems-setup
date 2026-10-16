@@ -17,6 +17,8 @@ from deeptutor.services.file_io import atomic_write_json, atomic_write_text
 from deeptutor.services.path_service import get_path_service
 from deeptutor.services.summary_notes.render import ASSETS, COMPLETE, render_html, validate_notes
 
+from deeptutor.services.summary_notes.enex import export_enex
+
 router = APIRouter(prefix="/summary-notes")
 generation_lock = asyncio.Lock()
 
@@ -178,17 +180,17 @@ async def generate(session_id: str, body: GenerateRequest):
 
 @router.get("/{session_id}/turns/{turn_id}/download")
 async def download(session_id: str, turn_id: str, format: str = "html"):
-    if format not in {"html", "md"}:
-        raise HTTPException(400, "只支持 HTML 和 Markdown。")
+    if format not in {"html", "md", "enex"}:
+        raise HTTPException(400, "只支持 HTML、Markdown 和印象笔记 ENEX。")
     data = read_session(session_id)
     turn = next((item for item in data["turns"] if item["id"] == turn_id), None)
     if not turn or turn["status"] != "complete":
         raise HTTPException(404, "完整文件尚未生成。")
     filename = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "-", turn["title"])[:100] + "读书笔记." + format
-    content = turn["html"] if format == "html" else turn["notes"]
+    content = export_enex(turn) if format == "enex" else turn["html"] if format == "html" else turn["notes"]
     return Response(
         content=content,
-        media_type="text/html" if format == "html" else "text/markdown",
+        media_type="application/xml" if format == "enex" else "text/html" if format == "html" else "text/markdown",
         headers={
             "Content-Disposition": "attachment; filename*=UTF-8''" + quote(filename),
             "Cache-Control": "no-store",
