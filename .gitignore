@@ -32,3 +32,8 @@ shortcut-icons/
 # Reviewed distribution code; keep installation directories ignored elsewhere.
 !customizations/DeepTutor/
 !customizations/DeepTutor/files/deeptutor/
+
+# Local credentials and launcher state
+private/
+*.dpapi
+*.url
