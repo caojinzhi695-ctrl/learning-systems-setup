@@ -27,6 +27,11 @@ export default function SummaryNotesPage() {
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [importing, setImporting] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const [importStatus, setImportStatus] = useState("");
+  const [deleting, setDeleting] = useState("");
+  const dragDepth = useRef(0);
   const activeRequest = useRef(false);
   const messageInput = useRef<HTMLTextAreaElement>(null);
   const selection = useRef(0);
@@ -87,22 +92,44 @@ export default function SummaryNotesPage() {
     } finally { activeRequest.current = false; setBusy(false); }
   }
 
-  async function importText(file?: File) {
-    if (!file) return;
-    if (!/\.(txt|md)$/i.test(file.name) || file.size > 240000) { setError("仅支持较小的 TXT/Markdown 文字材料；PDF、音视频请粘贴提取正文或转写。"); return; }
-    const text = await file.text();
-    if (text.length > 40000) { setError("单次材料最多4万字，请分篇整理。没有截断或发送材料。"); return; }
-    setMessage(text); setError("");
+  async function deleteNote(turn: Turn) {
+    if (!session || activeRequest.current || !window.confirm("确定删除这条笔记及其材料、网页和草稿吗？删除后无法恢复。")) return;
+    activeRequest.current = true; setDeleting(turn.id); setError("");
+    try {
+      const data = await request(`/${session.id}/turns/${turn.id}`, { method: "DELETE" }) as Session;
+      setSession(data);
+      setSessions(items => items.map(item => item.id === data.id ? { id: data.id, title: data.title } : item));
+    } catch (e) { setError(e instanceof Error ? e.message : "删除失败，请稍后重试。"); }
+    finally { activeRequest.current = false; setDeleting(""); }
+  }
+
+  async function importFiles(files: File[]) {
+    if (!files.length || activeRequest.current) return;
+    activeRequest.current = true; setImporting(true); setError(""); setImportStatus("");
+    try {
+      if (files.some(file => file.size > 50 * 1024 * 1024)) throw new Error("单个文件不能超过50MB。");
+      let combined = message;
+      for (const file of files) {
+        setImportStatus(`正在提取：${file.name}；音视频本机转写可能需要几分钟…`);
+        const body = new FormData(); body.set("file", file);
+        const data = await request("/import", { method: "POST", body });
+        combined += `${combined.trim() ? "\n\n" : ""}【文件：${file.name}】\n${data.text}`;
+        if (combined.length > 40000) throw new Error("合并材料超过4万字，请拆分导入。原有输入保留，本次文件没有填入或发送模型。");
+      }
+      setMessage(combined); setImportStatus(`已导入 ${files.length} 个文件，请检查文字后点击发送生成笔记。`);
+      messageInput.current?.focus();
+    } catch (e) { setError(e instanceof Error ? e.message : "文件提取失败。"); setImportStatus(""); }
+    finally { activeRequest.current = false; setImporting(false); }
   }
 
   return <div className="flex h-full min-h-0 flex-col bg-[var(--background)]">
     <header className="flex shrink-0 items-center gap-3 border-b border-[var(--border)] px-4 py-3 sm:px-6">
       <h1 className="shrink-0 font-serif text-base font-semibold">{t("总结笔记")}</h1>
-      <select aria-label={t("选择笔记聊天")} disabled={busy || loading} value={session?.id ?? ""} onChange={e => { setMessage(""); void select(e.target.value); }} className="ml-auto min-w-0 max-w-[50%] truncate rounded-lg border-0 bg-transparent px-2 py-2 text-sm text-[var(--muted-foreground)] focus-visible:outline-2">
+      <select aria-label={t("选择笔记聊天")} disabled={busy || importing || loading} value={session?.id ?? ""} onChange={e => { setMessage(""); void select(e.target.value); }} className="ml-auto min-w-0 max-w-[50%] truncate rounded-lg border-0 bg-transparent px-2 py-2 text-sm text-[var(--muted-foreground)] focus-visible:outline-2">
         {!session && <option value="">{t("选择聊天")}</option>}
         {sessions.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}
       </select>
-      <button type="button" aria-label={t("新建笔记聊天")} title={t("新建笔记聊天")} disabled={busy || loading} onClick={() => void create()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--muted)] focus-visible:outline-2 disabled:opacity-50"><Plus size={20} /></button>
+      <button type="button" aria-label={t("新建笔记聊天")} title={t("新建笔记聊天")} disabled={busy || importing || loading} onClick={() => void create()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--muted)] focus-visible:outline-2 disabled:opacity-50"><Plus size={20} /></button>
       <button type="button" aria-label={t("收集栏")} title={t("收集栏")} aria-expanded={collectionOpen} aria-controls="note-collection" onClick={() => setCollectionOpen(open => !open)} className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2 text-sm text-[var(--muted-foreground)] hover:bg-[var(--muted)] focus-visible:outline-2"><PanelRight size={18} /><span className="hidden sm:inline">{t("收集栏")}</span><span className="text-xs">{session?.turns.length || 0}</span></button>
     </header>
     <div className="relative flex min-h-0 flex-1 overflow-hidden">
@@ -118,16 +145,18 @@ export default function SummaryNotesPage() {
         {!loading && !session && <button type="button" onClick={() => void create()} className="mx-auto rounded-full border border-[var(--border)] px-5 py-2.5 text-sm hover:bg-[var(--muted)]">{t("新建笔记聊天")}</button>}
         {!loading && session && <>
       <form className="w-full" onSubmit={e => { e.preventDefault(); void generate(); }}>
-        <div className="rounded-[28px] border border-[var(--border)] bg-[var(--card)] px-4 pb-3 pt-4 shadow-sm focus-within:border-[var(--primary)]/40">
+        <div onDragEnter={e => { if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); dragDepth.current++; setDragging(true); } }} onDragOver={e => { if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); e.dataTransfer.dropEffect = busy || importing ? "none" : "copy"; } }} onDragLeave={e => { e.preventDefault(); dragDepth.current = Math.max(0, dragDepth.current - 1); if (!dragDepth.current) setDragging(false); }} onDrop={e => { e.preventDefault(); dragDepth.current = 0; setDragging(false); if (!busy && !importing) void importFiles(Array.from(e.dataTransfer.files)); }} className={`rounded-[28px] border bg-[var(--card)] px-4 pb-3 pt-4 shadow-sm focus-within:border-[var(--primary)]/40 ${dragging ? "border-[var(--primary)] ring-2 ring-[var(--primary)]/30" : "border-[var(--border)]"}`}>
+          <p className="mb-2 text-xs text-[var(--muted-foreground)]">{dragging ? "松开鼠标导入文件" : "可拖入 PDF、Word、PPT、Excel、文字、字幕及音视频；单个50MB以内，文字合计4万字以内。"}</p>
+          {importStatus && <p role="status" className="mb-2 text-xs text-[var(--muted-foreground)]">{importStatus}</p>}
           <label className="sr-only" htmlFor="summary-note-message">{t("粘贴材料或继续提问")}</label>
-          <textarea ref={messageInput} id="summary-note-message" rows={2} maxLength={40000} required disabled={busy} value={message} onChange={e => setMessage(e.target.value)} placeholder={t("今天想整理什么笔记？粘贴材料即可开始…")} className="block max-h-40 min-h-24 w-full resize-none border-0 bg-transparent text-sm leading-7 outline-none" onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = `${Math.min(e.currentTarget.scrollHeight, 160)}px`; }} />
+          <textarea ref={messageInput} id="summary-note-message" rows={2} maxLength={40000} required disabled={busy || importing} value={message} onChange={e => setMessage(e.target.value)} placeholder={t("今天想整理什么笔记？粘贴材料即可开始…")} className="block max-h-40 min-h-24 w-full resize-none border-0 bg-transparent text-sm leading-7 outline-none" onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = `${Math.min(e.currentTarget.scrollHeight, 160)}px`; }} />
           <div className="mt-2 flex items-center gap-3">
             <span className="flex items-center gap-1.5 text-sm text-[var(--muted-foreground)]"><NotebookPen size={17} />{t("总结笔记")}</span>
-            <label title={t("导入 TXT／Markdown")} className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-[var(--muted-foreground)] hover:bg-[var(--muted)] ${busy ? "pointer-events-none opacity-50" : ""}`}>
-              <Paperclip size={19} /><span className="sr-only">{t("导入 TXT／Markdown")}</span>
-              <input aria-label={t("导入文字材料")} type="file" accept=".txt,.md,text/plain,text/markdown" disabled={busy} onChange={e => void importText(e.target.files?.[0])} className="sr-only" />
+            <label title={t("导入文件")} className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-[var(--muted-foreground)] hover:bg-[var(--muted)] ${busy ? "pointer-events-none opacity-50" : ""}`}>
+              <Paperclip size={19} /><span className="sr-only">{t("导入文件")}</span>
+              <input aria-label={t("导入文字材料")} type="file" multiple accept=".pdf,.docx,.pptx,.xlsx,.txt,.md,.csv,.srt,.vtt,.mp3,.wav,.m4a,.aac,.flac,.ogg,.mp4,.webm" disabled={busy || importing} onChange={e => { void importFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }} className="sr-only" />
             </label>
-            <button type="submit" aria-label={t("发送并生成笔记")} title={t("发送并生成笔记")} disabled={busy || !message.trim()} className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--foreground)] text-[var(--background)] focus-visible:outline-2 disabled:opacity-30"><ArrowUp size={19} /></button>
+            <button type="submit" aria-label={t("发送并生成笔记")} title={t("发送并生成笔记")} disabled={busy || importing || !message.trim()} className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--foreground)] text-[var(--background)] focus-visible:outline-2 disabled:opacity-30"><ArrowUp size={19} /></button>
           </div>
         </div>
 
@@ -137,7 +166,7 @@ export default function SummaryNotesPage() {
             ["整理一段阅读材料", "请根据以下阅读材料整理固定六章笔记，并生成 HTML：\n\n"],
             ["优化已有笔记的结构", "请在忠实保留原意的前提下，优化这份笔记的结构：\n\n"],
             ["按固定模板制作网页", "请整理以下笔记，并按照固定模板生成 HTML 网页：\n\n"],
-          ].map(([label, prompt]) => <button key={label} type="button" disabled={busy} onClick={() => { setMessage(prompt); messageInput.current?.focus(); }} className="flex w-full items-center gap-3 rounded-lg px-1 py-2 text-left hover:text-[var(--foreground)] focus-visible:outline-2 disabled:opacity-50"><span>{t(label)}</span><span aria-hidden className="text-[var(--primary)]">→</span></button>)}
+          ].map(([label, prompt]) => <button key={label} type="button" disabled={busy || importing} onClick={() => { setMessage(prompt); messageInput.current?.focus(); }} className="flex w-full items-center gap-3 rounded-lg px-1 py-2 text-left hover:text-[var(--foreground)] focus-visible:outline-2 disabled:opacity-50"><span>{t(label)}</span><span aria-hidden className="text-[var(--primary)]">→</span></button>)}
         </div>
         </>}
         {busy && <p role="status" className="animate-pulse text-center text-sm text-[var(--muted-foreground)]">{t("正在整理文字并制作网页…")}</p>}
@@ -150,12 +179,13 @@ export default function SummaryNotesPage() {
         <button type="button" aria-label={t("收起收集栏")} onClick={() => setCollectionOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-[var(--muted)] focus-visible:outline-2"><X size={17} /></button>
       </header>
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
-        {!loading && session?.turns.map((turn, index) => <section key={turn.id} aria-label={`${t("笔记结果")} ${index + 1}`} className="space-y-3">
+        {!loading && session?.turns.slice().reverse().map((turn, index) => <section key={turn.id} aria-label={`${t("笔记结果")} ${index + 1}`} className="space-y-3">
           <details className="w-full rounded-2xl bg-[var(--muted)] px-4 py-3">
             <summary className="cursor-pointer text-sm"><span className="inline-block max-w-[90%] truncate align-bottom">{turn.message.split("\n").find(line => line.trim()) || t("查看本次材料／修改要求")}</span></summary>
             <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-words text-sm leading-6">{turn.message}</pre>
           </details>
           <div className="space-y-3 rounded-2xl border border-[var(--border)] px-4 py-4 ">
+            <div className="flex justify-end"><button type="button" disabled={busy || importing || !!deleting} onClick={() => void deleteNote(turn)} className="rounded-lg px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-40" aria-label={`删除笔记 ${turn.title || index + 1}`}>{deleting === turn.id ? "正在删除…" : "删除笔记"}</button></div>
             <div className="flex items-center gap-2 text-sm font-medium"><NotebookPen size={16} className="shrink-0 text-[var(--muted-foreground)]" /><span className="min-w-0 break-words">{turn.title || t("笔记结果")}</span><span className="ml-auto shrink-0 text-xs font-normal text-[var(--muted-foreground)]">{turn.status === "complete" ? t("已完成") : t("未完成")}</span></div>
             {turn.status !== "complete" && <p role="status" className="text-sm text-amber-700">{turn.error || t("请求正在处理，请稍后重新打开本聊天查看。")}</p>}
             {turn.status === "complete" && <>

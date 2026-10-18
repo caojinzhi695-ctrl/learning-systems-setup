@@ -9,7 +9,7 @@ import time
 from urllib.parse import quote
 import uuid
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, File, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
@@ -48,6 +48,28 @@ class GenerateRequest(BaseModel):
     message: str = Field(min_length=1, max_length=40000)
     request_id: str = Field(pattern=r"^[a-f0-9]{32}$")
     confirm_api_cost: bool = False
+
+
+@router.post('/import')
+async def import_material(file: UploadFile = File(...)):
+    from deeptutor.services.summary_notes.import_material import extract_material, SUPPORTED
+    from pathlib import Path
+    try:
+        if Path(file.filename or '').suffix.lower() not in SUPPORTED:
+            raise HTTPException(415, '支持 PDF、DOCX、PPTX、XLSX、TXT、MD、CSV、SRT、VTT 和常见音视频；旧版 Office 文件请先转换格式。')
+        data = await file.read(50 * 1024 * 1024 + 1)
+        if len(data) > 50 * 1024 * 1024: raise HTTPException(413, '单个文件不能超过50MB。')
+        if not data: raise HTTPException(400, '文件为空。')
+        text = await asyncio.to_thread(extract_material, file.filename or '', data)
+        return {'name': file.filename, 'text': text, 'characters': len(text)}
+    except ValueError as exc:
+        raise HTTPException(422, str(exc)) from None
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(422, '文件无法读取或处理超时，请检查格式、加密状态或拆分文件。') from None
+    finally:
+        await file.close()
 
 
 @router.get("")
@@ -126,6 +148,15 @@ async def generate(session_id: str, body: GenerateRequest):
             from deeptutor.services.llm.types import StreamOutcome
 
             config = get_llm_config()
+            # Match Content Shelf's note-generation request: use the budget for
+            # the six-chapter answer instead of consuming it on hidden thinking.
+            request_options = {}
+            if config.binding == "deepseek" or (
+                (config.base_url or "").rstrip("/") in {
+                    "https://api.deepseek.com", "https://api.deepseek.com/v1"
+                }
+            ):
+                request_options["extra_body"] = {"thinking": {"type": "disabled"}}
             outcome = StreamOutcome()
             system = (ASSETS / "instructions.md").read_text(encoding="utf-8")
             messages = [{"role": "system", "content": system}, *history]
@@ -144,15 +175,17 @@ async def generate(session_id: str, body: GenerateRequest):
                     max_retries=0,
                     outcome=outcome,
                     temperature=0.2,
-                    **get_token_limit_kwargs(config.model, 12000),
+                    **get_token_limit_kwargs(config.model, 16000),
+                    **request_options,
                 ):
                     chunks.append(chunk)
 
-            await asyncio.wait_for(consume(), timeout=300)
+            await asyncio.wait_for(consume(), timeout=600)
             raw = clean_thinking_tags("".join(chunks), config.binding, config.model).strip()
             turn["notes"] = raw.replace(COMPLETE, "").strip()
             atomic_write_json(path, data)  # Text survives even if HTML conversion fails.
             if outcome.finish_reason not in {"stop", "end_turn"}:
+                turn["finish_reason"] = outcome.finish_reason
                 raise ValueError("模型回答被截断或未正常结束，已保留草稿，未当作成功。")
             turn["notes"] = validate_notes(raw)
             title, html = render_html(turn["notes"])
@@ -169,12 +202,35 @@ async def generate(session_id: str, body: GenerateRequest):
                 else "模型请求超时，已保留收到的草稿；没有自动重试。"
             )
         except Exception:
+            turn["notes"] = turn["notes"] or "".join(chunks).replace(COMPLETE, "").strip()
             turn["status"] = "failed"
             turn["error"] = (
                 "模型或保存服务调用失败，没有自动重试。请检查模型连接和可用余额后再手动发送。"
             )
         data["updated_at"] = time.time()
         atomic_write_json(path, data)
+        return data
+
+
+@router.delete('/{session_id}/turns/{turn_id}')
+async def delete_turn(session_id: str, turn_id: str):
+    if not re.fullmatch(r'[a-f0-9]{32}', turn_id):
+        raise HTTPException(404, '笔记不存在。')
+    if generation_lock.locked():
+        raise HTTPException(409, '笔记正在生成，请完成后再删除。')
+    async with generation_lock:
+        data = read_session(session_id)
+        turn = next((item for item in data['turns'] if item['id'] == turn_id), None)
+        if not turn:
+            raise HTTPException(404, '笔记不存在。')
+        data['turns'] = [item for item in data['turns'] if item['id'] != turn_id]
+        latest = next((item for item in reversed(data['turns']) if item['status'] == 'complete'), None)
+        data['title'] = latest.get('title', '新建笔记聊天') if latest else '新建笔记聊天'
+        data['updated_at'] = time.time()
+        path = session_path(session_id)
+        atomic_write_json(path, data)
+        for suffix in ('.md', '.html'):
+            (path.parent / (turn_id + suffix)).unlink(missing_ok=True)
         return data
 
 

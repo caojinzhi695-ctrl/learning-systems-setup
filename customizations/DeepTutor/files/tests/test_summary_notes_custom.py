@@ -138,12 +138,14 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
             nonlocal count
             count += 1
             self.assertEqual(kwargs["max_retries"], 0)
+            self.assertEqual(kwargs["max_tokens"], 16000)
+            self.assertEqual(kwargs["extra_body"], {"thinking": {"type": "disabled"}})
             self.assertIn("材料", kwargs["messages"][-1]["content"])
             kwargs["outcome"].finish_reason = "length" if truncated else "stop"
             yield NOTES + "\n" + COMPLETE
 
         config = SimpleNamespace(
-            model="test-only", api_key="unused", base_url="http://unused.invalid", binding="openai"
+            model="test-only", api_key="unused", base_url="https://api.deepseek.com", binding="deepseek"
         )
         with (
             tempfile.TemporaryDirectory() as temp,
