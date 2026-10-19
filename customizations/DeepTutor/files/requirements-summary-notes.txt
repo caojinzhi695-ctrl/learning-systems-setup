@@ -1,0 +1,4 @@
+# Local CPU OCR; Apache-2.0 RapidOCR and model attribution: https://github.com/RapidAI/RapidOCR
+rapidocr==3.10.0
+onnxruntime==1.31.0
+pymupdf==1.28.2

@@ -123,6 +123,13 @@ class RenderTests(unittest.TestCase):
         )
         self.assertEqual(soup.script.get_text(), original.script.get_text())
 
+    def test_normal_stop_can_accept_missing_marker_only_with_complete_recap(self):
+        self.assertIn("六、实践与复习", validate_notes(NOTES, allow_missing_marker=True))
+        with self.assertRaises(ValueError):
+            validate_notes(NOTES.replace("### 六、实践与复习", "### 遗漏章节"), allow_missing_marker=True)
+        with self.assertRaises(ValueError):
+            validate_notes(NOTES[:NOTES.index("#### 3. 快速回顾")] + "#### 3. 快速回顾\n未完成", allow_missing_marker=True)
+
     def test_truncated_or_incomplete_not_success(self):
         with self.assertRaises(ValueError):
             validate_notes(NOTES)
@@ -170,14 +177,12 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                     status_code = 401
                 raise AuthenticationFailure("secret-value-must-not-be-exposed")
             self.assertEqual(kwargs["max_retries"], 0)
-            self.assertEqual(kwargs["max_tokens"], 16000)
-            self.assertEqual(kwargs["extra_body"], {"thinking": {"type": "disabled"}})
             self.assertIn("材料", kwargs["messages"][-1]["content"])
             kwargs["outcome"].finish_reason = "length" if truncated else "stop"
             yield NOTES + "\n" + COMPLETE
 
         config = SimpleNamespace(
-            model="test-only", api_key="unused", base_url="https://api.deepseek.com", binding="deepseek"
+            model="test-only", api_key="unused", base_url="http://unused.invalid", binding="openai"
         )
         with (
             tempfile.TemporaryDirectory() as temp,

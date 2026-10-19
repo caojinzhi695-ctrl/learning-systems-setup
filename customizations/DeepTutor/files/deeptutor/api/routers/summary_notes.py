@@ -56,7 +56,7 @@ async def import_material(file: UploadFile = File(...)):
     from pathlib import Path
     try:
         if Path(file.filename or '').suffix.lower() not in SUPPORTED:
-            raise HTTPException(415, '支持 PDF、DOCX、PPTX、XLSX、TXT、MD、CSV、SRT、VTT 和常见音视频；旧版 Office 文件请先转换格式。')
+            raise HTTPException(415, '支持 PDF（含扫描页及图片文字OCR）、DOCX、PPTX、XLSX、图片、TXT、MD、CSV、SRT、VTT 和常见音视频；旧版 Office 文件请先转换格式。')
         data = await file.read(50 * 1024 * 1024 + 1)
         if len(data) > 50 * 1024 * 1024: raise HTTPException(413, '单个文件不能超过50MB。')
         if not data: raise HTTPException(400, '文件为空。')
@@ -195,10 +195,10 @@ async def generate(session_id: str, body: GenerateRequest):
             raw = clean_thinking_tags("".join(chunks), config.binding, config.model).strip()
             turn["notes"] = raw.replace(COMPLETE, "").strip()
             atomic_write_json(path, data)  # Text survives even if HTML conversion fails.
+            turn["finish_reason"] = outcome.finish_reason
             if outcome.finish_reason not in {"stop", "end_turn"}:
-                turn["finish_reason"] = outcome.finish_reason
                 raise ValueError("模型回答被截断或未正常结束，已保留草稿，未当作成功。")
-            turn["notes"] = validate_notes(raw)
+            turn["notes"] = validate_notes(raw, allow_missing_marker=True)
             title, html = render_html(turn["notes"])
             atomic_write_text(path.parent / (turn["id"] + ".md"), turn["notes"])
             atomic_write_text(path.parent / (turn["id"] + ".html"), html)

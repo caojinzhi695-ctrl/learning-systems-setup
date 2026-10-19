@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, Plus, Paperclip, NotebookPen, PanelRight, X } from "lucide-react";
+import { ArrowUp, Plus, Paperclip, NotebookPen, PanelRight, X, LoaderCircle } from "lucide-react";
 import Image from "next/image";
 import { useTranslation } from "react-i18next";
 import MarkdownRenderer from "@/components/common/MarkdownRenderer";
@@ -120,14 +120,15 @@ export default function SummaryNotesPage() {
     try {
       if (files.some(file => file.size > 50 * 1024 * 1024)) throw new Error("单个文件不能超过50MB。");
       let combined = message;
-      for (const file of files) {
-        setImportStatus(`正在提取：${file.name}；音视频本机转写可能需要几分钟…`);
+      for (const [index, file] of files.entries()) {
+        const isMedia = /\.(mp3|wav|m4a|aac|flac|ogg|mp4|webm)$/i.test(file.name);
+        setImportStatus(`${isMedia ? "正在转录文字" : "正在提取并识别文字"}（${index + 1}/${files.length}）：${file.name}`);
         const body = new FormData(); body.set("file", file);
         const data = await request("/import", { method: "POST", body });
         combined += `${combined.trim() ? "\n\n" : ""}【文件：${file.name}】\n${data.text}`;
         if (combined.length > 40000) throw new Error("合并材料超过4万字，请拆分导入。原有输入保留，本次文件没有填入或发送模型。");
       }
-      setMessage(combined); setImportStatus(`已导入 ${files.length} 个文件，请检查文字后点击发送生成笔记。`);
+      setMessage(combined); setImportStatus("");
       messageInput.current?.focus();
     } catch (e) { setError(e instanceof Error ? e.message : "文件提取失败。"); setImportStatus(""); }
     finally { activeRequest.current = false; setImporting(false); }
@@ -157,15 +158,19 @@ export default function SummaryNotesPage() {
         {!loading && session && <>
       <form className="w-full" onSubmit={e => { e.preventDefault(); void generate(); }}>
         <div onDragEnter={e => { if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); dragDepth.current++; setDragging(true); } }} onDragOver={e => { if (e.dataTransfer.types.includes("Files")) { e.preventDefault(); e.dataTransfer.dropEffect = busy || importing ? "none" : "copy"; } }} onDragLeave={e => { e.preventDefault(); dragDepth.current = Math.max(0, dragDepth.current - 1); if (!dragDepth.current) setDragging(false); }} onDrop={e => { e.preventDefault(); dragDepth.current = 0; setDragging(false); if (!busy && !importing) void importFiles(Array.from(e.dataTransfer.files)); }} className={`rounded-[28px] border bg-[var(--card)] px-4 pb-3 pt-4 shadow-sm focus-within:border-[var(--primary)]/40 ${dragging ? "border-[var(--primary)] ring-2 ring-[var(--primary)]/30" : "border-[var(--border)]"}`}>
-          <p className="mb-2 text-xs text-[var(--muted-foreground)]">{dragging ? "松开鼠标导入文件" : "可拖入 PDF、Word、PPT、Excel、文字、字幕及音视频；单个50MB以内，文字合计4万字以内。"}</p>
-          {importStatus && <p role="status" className="mb-2 text-xs text-[var(--muted-foreground)]">{importStatus}</p>}
+          {dragging && <p role="status" className="mb-2 text-xs text-[var(--muted-foreground)]">松开鼠标导入文件</p>}
+          {(importing || busy) && <div className="mb-3 space-y-2" aria-busy="true">
+            <style>{`@keyframes summary-note-spin { to { transform: rotate(360deg); } } .summary-note-spinner { animation: summary-note-spin 1s linear infinite !important; }`}</style>
+            <div className="flex items-start gap-2"><LoaderCircle aria-hidden="true" size={18} className="summary-note-spinner mt-0.5 shrink-0 text-[var(--primary)]" /><p role="status" className="break-words text-xs text-[var(--muted-foreground)]">{importing ? importStatus || "正在读取文件…" : "正在生成文字笔记和 HTML 网页，请稍候…"}</p></div>
+            <progress aria-label={importing ? "文字提取与转录进度，处理中" : "笔记生成进度，处理中"} className="block h-1.5 w-full accent-[var(--primary)]" />
+          </div>}
           <label className="sr-only" htmlFor="summary-note-message">{t("粘贴材料或继续提问")}</label>
           <textarea ref={messageInput} id="summary-note-message" rows={2} maxLength={40000} required disabled={busy || importing} value={message} onChange={e => setMessage(e.target.value)} placeholder={t("今天想整理什么笔记？粘贴材料即可开始…")} className="block max-h-40 min-h-24 w-full resize-none border-0 bg-transparent text-sm leading-7 outline-none" onInput={e => { e.currentTarget.style.height = "auto"; e.currentTarget.style.height = `${Math.min(e.currentTarget.scrollHeight, 160)}px`; }} />
           <div className="mt-2 flex items-center gap-3">
             <span className="flex items-center gap-1.5 text-sm text-[var(--muted-foreground)]"><NotebookPen size={17} />{t("总结笔记")}</span>
             <label title={t("导入文件")} className={`flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-[var(--muted-foreground)] hover:bg-[var(--muted)] ${busy ? "pointer-events-none opacity-50" : ""}`}>
               <Paperclip size={19} /><span className="sr-only">{t("导入文件")}</span>
-              <input aria-label={t("导入文字材料")} type="file" multiple accept=".pdf,.docx,.pptx,.xlsx,.txt,.md,.csv,.srt,.vtt,.mp3,.wav,.m4a,.aac,.flac,.ogg,.mp4,.webm" disabled={busy || importing} onChange={e => { void importFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }} className="sr-only" />
+              <input aria-label={t("导入文字材料")} type="file" multiple accept=".pdf,.docx,.pptx,.xlsx,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,.txt,.md,.csv,.srt,.vtt,.mp3,.wav,.m4a,.aac,.flac,.ogg,.mp4,.webm" disabled={busy || importing} onChange={e => { void importFiles(Array.from(e.target.files ?? [])); e.target.value = ""; }} className="sr-only" />
             </label>
             <button type="submit" aria-label={t("发送并生成笔记")} title={t("发送并生成笔记")} disabled={busy || importing || !message.trim()} className="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--foreground)] text-[var(--background)] focus-visible:outline-2 disabled:opacity-30"><ArrowUp size={19} /></button>
           </div>
@@ -180,7 +185,6 @@ export default function SummaryNotesPage() {
           ].map(([label, prompt]) => <button key={label} type="button" disabled={busy || importing} onClick={() => { setMessage(prompt); messageInput.current?.focus(); }} className="flex w-full items-center gap-3 rounded-lg px-1 py-2 text-left hover:text-[var(--foreground)] focus-visible:outline-2 disabled:opacity-50"><span>{t(label)}</span><span aria-hidden className="text-[var(--primary)]">→</span></button>)}
         </div>
         </>}
-        {busy && <p role="status" className="animate-pulse text-center text-sm text-[var(--muted-foreground)]">{t("正在整理文字并制作网页…")}</p>}
       </div>
     </main>
     </div>

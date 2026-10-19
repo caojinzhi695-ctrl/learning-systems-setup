@@ -42,6 +42,7 @@ function Install-Notes {
   $source = Join-Path $Root 'DeepTutor'
   Run-Native $dtPython @((Join-Path $PSScriptRoot 'prepare-notes.py'),'--source',$source)
   Run-Native $dtPython @('-m','pip','install','beautifulsoup4>=4.15.0,<5','markdown-it-py>=3,<5')
+  Run-Native $dtPython @('-m','pip','install','-r',(Join-Path $source 'requirements-summary-notes.txt'))
   Run-Native $dtPython @('-m','pip','install','--no-deps','-e',$source)
   Push-Location (Join-Path $source 'web')
   try { Run-Native npm @('ci','--legacy-peer-deps','--no-audit','--no-fund') } finally { Pop-Location }

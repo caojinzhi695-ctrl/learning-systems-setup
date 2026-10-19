@@ -34,10 +34,16 @@ def markdown(text: str) -> str:
     return MD.render(normalise(text))
 
 
-def validate_notes(text: str) -> str:
-    if not text.rstrip().endswith(COMPLETE):
+def validate_notes(text: str, *, allow_missing_marker: bool = False) -> str:
+    has_marker = text.rstrip().endswith(COMPLETE)
+    if not has_marker and not allow_missing_marker:
         raise ValueError("回答未完整结束或材料不足，未当作完成笔记。请查看草稿和提示。")
-    notes = text[: text.rfind(COMPLETE)].strip()
+    notes = text[: text.rfind(COMPLETE)].strip() if has_marker else text.strip()
+    if not has_marker:
+        # A normal provider stop plus a complete final recap can replace the optional marker.
+        recap = re.search(r"^#{3,4}[^\n]*快速回顾[^\n]*\n+(.+?)\s*$", notes, re.M | re.S)
+        if not recap or len(recap.group(1).strip()) < 60 or not re.search(r"[。！？.!?]$", recap.group(1).strip()):
+            raise ValueError("回答缺少完整的结尾回顾，已保留草稿，未当作完成笔记。")
     headings = re.findall(r"^#{2,3}\s+(.+?)\s*$", notes, re.M)
     if headings != SECTIONS or "整理范围" not in notes:
         raise ValueError("回答缺少固定六章或整理范围，已保留草稿，未生成不完整网页。")
