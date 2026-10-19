@@ -32,6 +32,7 @@ export default function SummaryNotesPage() {
   const [importStatus, setImportStatus] = useState("");
   const [deleting, setDeleting] = useState("");
   const dragDepth = useRef(0);
+  const [copiedId, setCopiedId] = useState("");
   const activeRequest = useRef(false);
   const messageInput = useRef<HTMLTextAreaElement>(null);
   const selection = useRef(0);
@@ -62,6 +63,16 @@ export default function SummaryNotesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     return () => { cancelled = true; selection.current++; };
   }, [select]);
+
+  async function copyNotes(turn: Turn) {
+    try {
+      await navigator.clipboard.writeText(turn.notes);
+      setCopiedId(turn.id);
+      setTimeout(() => setCopiedId(id => id === turn.id ? "" : id), 2500);
+    } catch {
+      setError("复制失败，请允许剪贴板权限，或展开文字笔记后手动复制。");
+    }
+  }
 
   async function create() {
     if (activeRequest.current) return;
@@ -179,7 +190,7 @@ export default function SummaryNotesPage() {
         <button type="button" aria-label={t("收起收集栏")} onClick={() => setCollectionOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-[var(--muted)] focus-visible:outline-2"><X size={17} /></button>
       </header>
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
-        {!loading && session?.turns.slice().reverse().map((turn, index) => <section key={turn.id} aria-label={`${t("笔记结果")} ${index + 1}`} className="space-y-3">
+        {!loading && session?.turns.slice().reverse().map((turn, index) => <section key={turn.id} aria-label={`${t("笔记结果")} ${session.turns.length - index}`} className="space-y-3">
           <details className="w-full rounded-2xl bg-[var(--muted)] px-4 py-3">
             <summary className="cursor-pointer text-sm"><span className="inline-block max-w-[90%] truncate align-bottom">{turn.message.split("\n").find(line => line.trim()) || t("查看本次材料／修改要求")}</span></summary>
             <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-words text-sm leading-6">{turn.message}</pre>
@@ -190,7 +201,7 @@ export default function SummaryNotesPage() {
             {turn.status !== "complete" && <p role="status" className="text-sm text-amber-700">{turn.error || t("请求正在处理，请稍后重新打开本聊天查看。")}</p>}
             {turn.status === "complete" && <>
               <div className="grid grid-cols-1 gap-2 border-b border-[var(--border)] pb-3 sm:grid-cols-3">
-                <a className="flex min-h-11 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-center text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2" href={apiUrl(`/api/summary-notes/${session.id}/turns/${turn.id}/download?format=md`)}>{t("下载文字笔记")}</a>
+                <button type="button" className="flex min-h-11 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-center text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => void copyNotes(turn)}><span role="status">{copiedId === turn.id ? t("已复制") : t("复制笔记")}</span></button>
                 <a className="flex min-h-11 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-center text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2" href={apiUrl(`/api/summary-notes/${session.id}/turns/${turn.id}/download?format=html`)}>{t("下载 HTML 网页")}</a>
                 <a className="flex min-h-11 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-center text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2" href={apiUrl(`/api/summary-notes/${session.id}/turns/${turn.id}/download?format=enex`)}>{t("导出到印象笔记")}</a>
                 <p className="text-xs leading-5 text-[var(--muted-foreground)] sm:col-span-3">{t("下载 ENEX 后在印象笔记桌面端导入，顶部附有 HTML 网页文件；重复导入会新增笔记。")}</p>

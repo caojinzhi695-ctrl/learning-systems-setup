@@ -126,17 +126,31 @@ def render_html(notes: str) -> tuple[str, str]:
             center = root.find("li", recursive=False) if root else None
             branches_ul = center.find("ul", recursive=False) if center else None
             branches = branches_ul.find_all("li", recursive=False) if branches_ul else []
-            if not 1 <= len(branches) <= 4:
+            if not branches:
                 raise ValueError(
-                    "思维导图须为中心主题及1至4个真实分支，已保留文字，未生成布局错误网页。"
+                    "思维导图缺少中心主题或分支，已保留文字，未生成不完整网页。"
                 )
             branches_ul.extract()
             callout = add(section, "div", **{"class": "module callout"})
             add(callout, "h3", center.get_text(" ", strip=True))
             grid = add(section, "div", **{"class": "reading-map"})
-            for branch in branches:
+            # Preserve all real branches while retaining the fixed four-card layout.
+            # Overflow branches share the last card; never discard or rewrite content.
+            groups = [[branch] for branch in branches[:3]] + [branches[3:]] if len(branches) > 4 else [[branch] for branch in branches]
+            for group in groups:
                 card = add(grid, "div", **{"class": "module map-branch"})
-                label = branch.find("strong", recursive=False)
+                if len(group) > 1:
+                    add(card, "h3", " / ".join(
+                        branch.find("strong").get_text(" ", strip=True)
+                        if branch.find("strong") else "相关分支"
+                        for branch in group
+                    ))
+                    combined = add(card, "ul")
+                    for branch in group:
+                        combined.append(branch.extract())
+                    continue
+                branch = group[0]
+                label = branch.find("strong")
                 if not label:
                     raise ValueError("导图分支未使用指定文字层级，已保留文字。")
                 add(card, "h3", label.get_text(" ", strip=True))

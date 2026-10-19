@@ -85,6 +85,16 @@ NOTES = """《信息的二进制表示》读书笔记
 
 
 class RenderTests(unittest.TestCase):
+    def test_extra_mindmap_branches_preserved_in_four_cards(self):
+        extra = "".join(f"    - **{i}. 额外主题{i}**\n        - 完整保留细节{i}\n" for i in range(5, 8))
+        notes = NOTES.replace("\n### 五、阅读思考", "\n" + extra + "\n### 五、阅读思考")
+        _, html = render_html(validate_notes(notes + COMPLETE))
+        soup = BeautifulSoup(html, "html.parser")
+        self.assertEqual(len(soup.select(".map-branch")), 4)
+        for i in range(5, 8):
+            self.assertIn(f"完整保留细节{i}", soup.get_text())
+        self.assertIn("解读：依赖同一规则", soup.get_text())
+
     def test_complete_template_and_safe_full_content(self):
         text = validate_notes(NOTES + "\n" + COMPLETE)
         title, html = render_html(text)
@@ -127,16 +137,38 @@ class RenderTests(unittest.TestCase):
         self.assertEqual(len(soup.select("script")), 1)  # Only the supplied directory script.
 
 
+class ContextTests(unittest.TestCase):
+    def test_old_revisions_do_not_overflow_or_modify_history(self):
+        turns = [{"status": "complete", "message": "旧材料" * 10000, "notes": "旧笔记" * 10000} for _ in range(8)]
+        turns.append({"status": "complete", "message": "最近材料", "notes": "最近完整笔记"})
+        turns.append({"status": "failed", "message": "失败重复输入", "notes": ""})
+        result = api.build_generation_history(turns, "本次修改")
+        self.assertEqual([x["content"] for x in result], ["最近材料", "最近完整笔记", "本次修改"])
+        self.assertEqual(len(turns), 10)
+
+    def test_actual_large_request_rejected_without_truncation(self):
+        from fastapi import HTTPException
+        with self.assertRaises(HTTPException) as error:
+            api.build_generation_history([], "字" * 60001)
+        self.assertEqual(error.exception.status_code, 413)
+
+
 class ApiTests(unittest.IsolatedAsyncioTestCase):
     async def test_saved_chats_downloads_dedup_and_incomplete(self):
         app = FastAPI()
         app.include_router(api.router)
         count = 0
         truncated = False
+        auth_failed = False
 
         async def fake_stream(**kwargs):
             nonlocal count
             count += 1
+            if auth_failed:
+                yield "已收到的部分文字"
+                class AuthenticationFailure(Exception):
+                    status_code = 401
+                raise AuthenticationFailure("secret-value-must-not-be-exposed")
             self.assertEqual(kwargs["max_retries"], 0)
             self.assertEqual(kwargs["max_tokens"], 16000)
             self.assertEqual(kwargs["extra_body"], {"thinking": {"type": "disabled"}})
@@ -175,6 +207,15 @@ class ApiTests(unittest.IsolatedAsyncioTestCase):
                     self.assertTrue(
                         (Path(temp) / session["id"] / ("a" * 32 + "." + format)).exists()
                     )
+                auth_failed = True
+                body["request_id"] = "c" * 32
+                auth_result = (await client.post(url + "/generate", json=body)).json()["turns"][-1]
+                self.assertEqual(auth_result["status"], "failed")
+                self.assertIn("401", auth_result["error"])
+                self.assertNotIn("secret-value", auth_result["error"])
+                self.assertEqual(auth_result["notes"], "已收到的部分文字")
+                self.assertEqual(auth_result["message"], body["message"])
+                auth_failed = False
                 truncated = True
                 body["request_id"] = "b" * 32
                 failed = (await client.post(url + "/generate", json=body)).json()["turns"][-1]

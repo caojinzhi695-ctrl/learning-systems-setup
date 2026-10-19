@@ -101,6 +101,27 @@ async def get_session(session_id: str):
     return data
 
 
+def build_generation_history(turns: list[dict], message: str) -> list[dict]:
+    """Use the latest full revision, not every duplicate historical revision."""
+    latest = next(
+        (turn for turn in reversed(turns) if turn.get("status") == "complete" and turn.get("notes")),
+        None,
+    )
+    history = []
+    if latest:
+        history.extend([
+            {"role": "user", "content": latest["message"]},
+            {"role": "assistant", "content": latest["notes"]},
+        ])
+    history.append({"role": "user", "content": message})
+    if sum(len(item["content"]) for item in history) > 60000:
+        raise HTTPException(
+            413,
+            "本次材料与最近一版笔记合计超过6万字，未发送模型。请新建聊天单独整理本次材料；输入已保留，没有截断或重试。",
+        )
+    return history
+
+
 @router.post("/{session_id}/generate")
 async def generate(session_id: str, body: GenerateRequest):
     if not body.confirm_api_cost:
@@ -113,17 +134,7 @@ async def generate(session_id: str, body: GenerateRequest):
         data = read_session(session_id)
         if any(turn["id"] == body.request_id for turn in data["turns"]):
             return data  # A duplicated HTTP request must never bill a second time.
-        history = []
-        for turn in data["turns"]:
-            history.append({"role": "user", "content": turn["message"]})
-            if turn.get("notes") and turn["status"] == "complete":
-                history.append({"role": "assistant", "content": turn["notes"]})
-        history.append({"role": "user", "content": body.message.strip()})
-        if sum(len(item["content"]) for item in history) > 60000:
-            raise HTTPException(
-                413,
-                "本聊天材料过长（累计超过6万字），未发送模型。请新建聊天并分篇整理，不会静默截断。",
-            )
+        history = build_generation_history(data["turns"], body.message.strip())
         turn = {
             "id": body.request_id,
             "message": body.message.strip(),
@@ -201,11 +212,22 @@ async def generate(session_id: str, body: GenerateRequest):
                 if isinstance(exc, ValueError)
                 else "模型请求超时，已保留收到的草稿；没有自动重试。"
             )
-        except Exception:
+        except Exception as exc:
             turn["notes"] = turn["notes"] or "".join(chunks).replace(COMPLETE, "").strip()
             turn["status"] = "failed"
-            turn["error"] = (
-                "模型或保存服务调用失败，没有自动重试。请检查模型连接和可用余额后再手动发送。"
+            # Never expose provider exception text: it can contain credentials or prompts.
+            status = getattr(exc, "status_code", None)
+            messages = {
+                401: "模型服务认证失败（401）：当前 API 密钥无效或已失效。请在设置的模型服务中更新密钥后手动发送；材料已保留，没有自动重试。",
+                402: "模型服务余额不足（402）。请检查服务商账户；材料已保留，没有自动重试。",
+                403: "模型服务拒绝访问（403）。请检查账户与模型访问权限；材料已保留，没有自动重试。",
+                404: "模型或接口不存在（404）。请检查模型名称和服务地址；材料已保留，没有自动重试。",
+                429: "模型服务请求受限（429）。请稍后手动发送；材料已保留，没有自动重试。",
+            }
+            turn["error"] = messages.get(status) or (
+                "本地文件保存失败，请检查磁盘空间和目录权限；材料与已收到的文字已保留。"
+                if isinstance(exc, OSError)
+                else "模型服务或笔记处理失败，材料与已收到的文字已保留，没有自动重试。"
             )
         data["updated_at"] = time.time()
         atomic_write_json(path, data)
