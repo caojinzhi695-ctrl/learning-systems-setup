@@ -45,7 +45,16 @@ def apply(source, dry_run=False):
             upgrades.append(name)
     already = git(source, 'apply', '--reverse', '--check', str(patch), check=False).returncode == 0
     if not already:
-        git(source, 'apply', '--check', str(patch))
+        if git(source, 'apply', '--check', str(patch), check=False).returncode:
+            for upgrade in manifest.get('upgrade_patches', []):
+                candidate = child(PACKAGE, upgrade['path'])
+                if hashlib.sha256(candidate.read_bytes()).hexdigest() != upgrade['sha256']:
+                    raise SystemExit('Upgrade patch checksum mismatch; no files changed.')
+                if git(source, 'apply', '--check', str(candidate), check=False).returncode == 0:
+                    patch = candidate
+                    break
+            else:
+                raise SystemExit('Existing tracked files differ; back up and merge manually. No files changed.')
     if dry_run:
         print('Dry run passed: pinned version, payload checksums and patch compatibility verified.')
         return

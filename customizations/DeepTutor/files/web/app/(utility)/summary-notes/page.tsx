@@ -3,6 +3,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowUp, Plus, Paperclip, NotebookPen, PanelRight, X, LoaderCircle } from "lucide-react";
 import Image from "next/image";
+import dynamic from "next/dynamic";
+import ReviewExam from "@/components/summary-notes/ReviewExam";
+import DownloadExam from "@/components/summary-notes/DownloadExam";
+const NoteMindmap = dynamic(() => import("@/components/summary-notes/NoteMindmap"), { ssr: false });
 import { useTranslation } from "react-i18next";
 import MarkdownRenderer from "@/components/common/MarkdownRenderer";
 import { apiFetch, apiUrl } from "@/lib/api";
@@ -24,6 +28,22 @@ export default function SummaryNotesPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [message, setMessage] = useState("");
   const [collectionOpen, setCollectionOpen] = useState(false);
+  const [collectionWidth, setCollectionWidth] = useState(380);
+  const [resizingCollection, setResizingCollection] = useState(false);
+  const collectionRef = useRef<HTMLElement>(null);
+  const clampCollectionWidth = (width: number) => {
+    const parentWidth = collectionRef.current?.parentElement?.getBoundingClientRect().width || window.innerWidth;
+    const maximum = window.innerWidth >= 1024 ? parentWidth - 240 : parentWidth * 0.92;
+    return Math.max(Math.min(300, maximum), Math.min(width, maximum));
+  };
+  useEffect(() => {
+    try { const width = Number(localStorage.getItem('summary-collection-width')); if (width >= 300 && Number.isFinite(width)) setCollectionWidth(width); } catch {}
+  }, []);
+  const saveCollectionWidth = (width: number) => {
+    const next = clampCollectionWidth(width);
+    setCollectionWidth(next);
+    try { localStorage.setItem('summary-collection-width', String(next)); } catch {}
+  };
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -188,7 +208,8 @@ export default function SummaryNotesPage() {
       </div>
     </main>
     </div>
-    {collectionOpen && <aside id="note-collection" aria-label={t("笔记收集栏")} className="absolute inset-y-0 right-0 z-20 flex w-[min(380px,92vw)] shrink-0 flex-col border-l border-[var(--border)] bg-[var(--background)] shadow-lg lg:static lg:w-[380px] lg:shadow-none">
+    {collectionOpen && <aside ref={collectionRef} id="note-collection" aria-label={t("笔记收集栏")} style={{width: collectionWidth}} className={`absolute inset-y-0 right-0 z-20 flex max-w-[92%] shrink-0 flex-col border-l border-[var(--border)] bg-[var(--background)] shadow-lg lg:relative lg:inset-auto lg:max-w-[calc(100%-240px)] lg:shadow-none ${resizingCollection?'select-none [&_iframe]:pointer-events-none':''}`}>
+      <div role="separator" aria-label="调整收集栏宽度" aria-orientation="vertical" aria-valuemin={300} aria-valuenow={Math.round(collectionWidth)} tabIndex={0} title="左右拖动调整宽度，双击恢复默认" className="absolute inset-y-0 -left-1.5 z-30 w-3 touch-none cursor-col-resize hover:bg-[var(--primary)]/15 focus-visible:bg-[var(--primary)]/20 focus-visible:outline-none" onPointerDown={e=>{if(e.button!==0)return;e.preventDefault();e.currentTarget.setPointerCapture(e.pointerId);setResizingCollection(true);}} onPointerMove={e=>{if(!e.currentTarget.hasPointerCapture(e.pointerId))return;const edge=collectionRef.current?.getBoundingClientRect().right;if(edge!==undefined)saveCollectionWidth(edge-e.clientX);}} onPointerUp={e=>{if(e.currentTarget.hasPointerCapture(e.pointerId))e.currentTarget.releasePointerCapture(e.pointerId);setResizingCollection(false);}} onPointerCancel={()=>setResizingCollection(false)} onLostPointerCapture={()=>setResizingCollection(false)} onDoubleClick={()=>saveCollectionWidth(380)} onKeyDown={e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();saveCollectionWidth(collectionWidth+(e.key==='ArrowLeft'?40:-40));}if(e.key==='Home'){e.preventDefault();saveCollectionWidth(380);}}}/>
       <header className="flex shrink-0 items-center justify-between border-b border-[var(--border)] px-4 py-3">
         <h2 className="text-sm font-semibold">{t("收集栏")} <span className="ml-1 text-xs font-normal text-[var(--muted-foreground)]">{session?.turns.length || 0}</span></h2>
         <button type="button" aria-label={t("收起收集栏")} onClick={() => setCollectionOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-lg hover:bg-[var(--muted)] focus-visible:outline-2"><X size={17} /></button>
@@ -204,19 +225,21 @@ export default function SummaryNotesPage() {
             <div className="flex items-center gap-2 text-sm font-medium"><NotebookPen size={16} className="shrink-0 text-[var(--muted-foreground)]" /><span className="min-w-0 break-words">{turn.title || t("笔记结果")}</span><span className="ml-auto shrink-0 text-xs font-normal text-[var(--muted-foreground)]">{turn.status === "complete" ? t("已完成") : t("未完成")}</span></div>
             {turn.status !== "complete" && <p role="status" className="text-sm text-amber-700">{turn.error || t("请求正在处理，请稍后重新打开本聊天查看。")}</p>}
             {turn.status === "complete" && <>
-              <div className="grid grid-cols-1 gap-2 border-b border-[var(--border)] pb-3 sm:grid-cols-3">
+              <div className="grid grid-cols-1 gap-2 border-b border-[var(--border)] pb-3 sm:grid-cols-2 xl:grid-cols-4">
                 <button type="button" className="flex min-h-11 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-center text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2" onClick={() => void copyNotes(turn)}><span role="status">{copiedId === turn.id ? t("已复制") : t("复制笔记")}</span></button>
                 <a className="flex min-h-11 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-center text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2" href={apiUrl(`/api/summary-notes/${session.id}/turns/${turn.id}/download?format=html`)}>{t("下载 HTML 网页")}</a>
+                <DownloadExam sessionId={session.id} turnId={turn.id}/>
                 <a className="flex min-h-11 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--muted)] px-3 py-2 text-center text-xs font-medium text-[var(--foreground)] transition-colors hover:bg-[var(--accent)] focus-visible:outline-2 focus-visible:outline-offset-2" href={apiUrl(`/api/summary-notes/${session.id}/turns/${turn.id}/download?format=enex`)}>{t("导出到印象笔记")}</a>
-                <p className="text-xs leading-5 text-[var(--muted-foreground)] sm:col-span-3">{t("下载 ENEX 后在印象笔记桌面端导入，顶部附有 HTML 网页文件；重复导入会新增笔记。")}</p>
+                <p className="text-xs leading-5 text-[var(--muted-foreground)] sm:col-span-2 xl:col-span-4">{t("下载 ENEX 后在印象笔记桌面端导入，顶部附有 HTML 网页文件；重复导入会新增笔记。")}</p>
               </div>
             </>}
+            {turn.status === "complete" && <ReviewExam sessionId={session.id} turnId={turn.id}/>}
             {turn.notes && <details className="group rounded-lg bg-[var(--muted)]/40">
               <summary className="cursor-pointer px-3 py-2.5 text-sm font-medium">{turn.status === "complete" ? t("文字笔记 · 点击展开") : t("文字草稿 · 点击展开")}</summary>
               <div className="border-t border-[var(--border)] px-3 py-4 sm:px-4"><MarkdownRenderer content={turn.notes} allowHtml={false} enableImages={false} variant="prose" /></div>
             </details>}
             {turn.status === "complete" && <>
-              <details className="rounded-lg bg-[var(--muted)]/40"><summary className="cursor-pointer px-3 py-2.5 text-sm font-medium">{t("HTML 网页 · 点击预览")}</summary><iframe title={`${turn.title} HTML`} sandbox="" srcDoc={turn.html} className="h-[60vh] w-full rounded-b-lg border-t border-[var(--border)] bg-white" /></details>
+              <details className="rounded-lg border border-[var(--border)]"><summary className="cursor-pointer px-3 py-2.5 text-sm font-medium">思维导图 · 点击展开</summary><NoteMindmap key={turn.id} noteId={turn.id} markdown={turn.notes}/></details><details className="rounded-lg bg-[var(--muted)]/40"><summary className="cursor-pointer px-3 py-2.5 text-sm font-medium">{t("HTML 网页 · 点击预览")}</summary><iframe title={`${turn.title} HTML`} sandbox="" srcDoc={turn.html} className="h-[60vh] w-full rounded-b-lg border-t border-[var(--border)] bg-white" /></details>
 
             </>}
           </div>
