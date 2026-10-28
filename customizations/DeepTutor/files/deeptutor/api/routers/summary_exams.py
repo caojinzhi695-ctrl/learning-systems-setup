@@ -10,7 +10,7 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from deeptutor.services.file_io import atomic_write_json
-from deeptutor.services.summary_notes.exams import validate_paper, export_word
+from deeptutor.services.summary_notes.exams import validate_paper, export_word, export_html
 from deeptutor.services.summary_notes.render import ASSETS
 
 router = APIRouter()
@@ -112,3 +112,13 @@ async def download_word(session_id: str, turn_id: str, exam_id: str):
         raise HTTPException(404, '试卷尚未生成完整。')
     filename = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '-', exam['paper']['title'])[:100] + '-复习练习卷.docx'
     return Response(export_word(exam['paper']), media_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document', headers={'Content-Disposition': "attachment; filename*=UTF-8''" + quote(filename), 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})
+
+
+@router.get('/{session_id}/turns/{turn_id}/exams/{exam_id}/html')
+async def download_html(session_id: str, turn_id: str, exam_id: str):
+    _, turn = turn_for(session_id, turn_id)
+    exam = next((e for e in turn.get('exams', []) if e['id'] == exam_id), None)
+    if not exam or exam.get('status') != 'complete' or not exam.get('paper'):
+        raise HTTPException(404, '试卷尚未生成完整。')
+    filename = re.sub(r'[<>:"/\\|?*\x00-\x1f]', '-', exam['paper']['title'])[:100] + '-复习练习卷.html'
+    return Response(export_html(exam['paper'], 'deeptutor-exam-' + exam_id), media_type='text/html', headers={'Content-Disposition': "attachment; filename*=UTF-8''" + quote(filename), 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff'})

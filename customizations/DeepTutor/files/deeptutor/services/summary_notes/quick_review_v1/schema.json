@@ -1,0 +1,77 @@
+{
+  "$defs": {
+    "ExactScene": {
+      "additionalProperties": false,
+      "properties": {
+        "layout": {
+          "title": "Layout",
+          "type": "string"
+        },
+        "duration": {
+          "maximum": 14,
+          "minimum": 4,
+          "title": "Duration",
+          "type": "number"
+        },
+        "texts": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Texts",
+          "type": "object"
+        },
+        "source_quote": {
+          "maxLength": 180,
+          "minLength": 1,
+          "title": "Source Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "layout",
+        "duration",
+        "texts",
+        "source_quote"
+      ],
+      "title": "ExactScene",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "template_id": {
+      "const": "manim-quick-review-v1",
+      "title": "Template Id",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "summary": {
+      "maxLength": 160,
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+    },
+    "scenes": {
+      "items": {
+        "$ref": "#/$defs/ExactScene"
+      },
+      "maxItems": 24,
+      "minItems": 2,
+      "title": "Scenes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "template_id",
+    "title",
+    "summary",
+    "scenes"
+  ],
+  "title": "ExactPlan",
+  "type": "object"
+}

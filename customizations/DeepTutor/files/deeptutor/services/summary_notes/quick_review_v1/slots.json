@@ -1,0 +1,877 @@
+[
+  {
+    "layout": "principles",
+    "duration": 6,
+    "role": "四项原则：四张卡，每卡依次为标题、解释、应用。",
+    "slots": {
+      "title": {
+        "example": "四原则，先在脑中默念一遍",
+        "font_size": 39,
+        "bold": true,
+        "width": 14.2,
+        "max_units": 25
+      },
+      "subtitle": {
+        "example": "低竞争 · 高需求 · 轻小件 · 高毛利",
+        "font_size": 20,
+        "bold": false,
+        "width": 14.4,
+        "max_units": 42
+      },
+      "caption": {
+        "example": "竞争、需求、物流和利润，一起筛。",
+        "font_size": 20,
+        "bold": true,
+        "width": 13.9,
+        "max_units": 36
+      },
+      "note": {
+        "example": "以下阈值来自原材料，按适用类目、站点与统计口径核对。",
+        "font_size": 13,
+        "bold": false,
+        "width": 14.2,
+        "max_units": 52
+      },
+      "body_01": {
+        "example": "低竞争",
+        "font_size": 28,
+        "bold": true,
+        "width": 2.8,
+        "max_units": 6
+      },
+      "body_02": {
+        "example": "看竞争结构",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 8
+      },
+      "body_03": {
+        "example": "不只看卖家数量",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 8
+      },
+      "body_04": {
+        "example": "高需求",
+        "font_size": 28,
+        "bold": true,
+        "width": 2.8,
+        "max_units": 6
+      },
+      "body_05": {
+        "example": "看需求与成交",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 8
+      },
+      "body_06": {
+        "example": "结合关键词与趋势",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 8
+      },
+      "body_07": {
+        "example": "轻小件",
+        "font_size": 28,
+        "bold": true,
+        "width": 2.8,
+        "max_units": 6
+      },
+      "body_08": {
+        "example": "看重量与尺寸",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 8
+      },
+      "body_09": {
+        "example": "物流、仓储一起算",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 8
+      },
+      "body_10": {
+        "example": "高毛利",
+        "font_size": 28,
+        "bold": true,
+        "width": 2.8,
+        "max_units": 6
+      },
+      "body_11": {
+        "example": "保留利润空间",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 8
+      },
+      "body_12": {
+        "example": "先明确成本口径",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 8
+      }
+    }
+  },
+  {
+    "layout": "demand",
+    "duration": 7,
+    "role": "三项关键指标：每卡依次为标签、数值或短结论、解释；最后四个词为适用条件。",
+    "slots": {
+      "title": {
+        "example": "销量与需求：记住 50、10万、1.5",
+        "font_size": 39,
+        "bold": true,
+        "width": 14.2,
+        "max_units": 25
+      },
+      "subtitle": {
+        "example": "日均销量 ≥50件 ｜ 关键词搜索量 ≥10万 ｜ 供需比 >1.5",
+        "font_size": 20,
+        "bold": false,
+        "width": 14.4,
+        "max_units": 42
+      },
+      "caption": {
+        "example": "成交、搜索、供需一起看；先统一周期和定义。",
+        "font_size": 20,
+        "bold": true,
+        "width": 13.9,
+        "max_units": 36
+      },
+      "note": {
+        "example": "原文未说明搜索量周期；供需比的需求、竞争口径需明确。",
+        "font_size": 13,
+        "bold": false,
+        "width": 14.2,
+        "max_units": 52
+      },
+      "body_01": {
+        "example": "① 销量",
+        "font_size": 26,
+        "bold": true,
+        "width": null,
+        "max_units": 3.54
+      },
+      "body_02": {
+        "example": "≥50 件 / 日",
+        "font_size": 36,
+        "bold": true,
+        "width": 4.0,
+        "max_units": 7
+      },
+      "body_03": {
+        "example": "类目 BSR + 日均销量",
+        "font_size": 20,
+        "bold": false,
+        "width": 4.05,
+        "max_units": 13
+      },
+      "body_04": {
+        "example": "⑤ 需求",
+        "font_size": 26,
+        "bold": true,
+        "width": null,
+        "max_units": 3.54
+      },
+      "body_05": {
+        "example": "≥10 万",
+        "font_size": 36,
+        "bold": true,
+        "width": 4.0,
+        "max_units": 7
+      },
+      "body_06": {
+        "example": "关键词搜索量；周期待明",
+        "font_size": 20,
+        "bold": false,
+        "width": 4.05,
+        "max_units": 13
+      },
+      "body_07": {
+        "example": "⑤ 需求",
+        "font_size": 26,
+        "bold": true,
+        "width": null,
+        "max_units": 3.54
+      },
+      "body_08": {
+        "example": ">1.5",
+        "font_size": 36,
+        "bold": true,
+        "width": 4.0,
+        "max_units": 7
+      },
+      "body_09": {
+        "example": "供需比；需求 ÷ 竞争",
+        "font_size": 20,
+        "bold": false,
+        "width": 4.05,
+        "max_units": 13
+      },
+      "body_10": {
+        "example": "站点",
+        "font_size": 22,
+        "bold": true,
+        "width": null,
+        "max_units": 3
+      },
+      "body_11": {
+        "example": "类目",
+        "font_size": 22,
+        "bold": true,
+        "width": null,
+        "max_units": 3
+      },
+      "body_12": {
+        "example": "周期",
+        "font_size": 22,
+        "bold": true,
+        "width": null,
+        "max_units": 3
+      },
+      "body_13": {
+        "example": "指标定义",
+        "font_size": 22,
+        "bold": true,
+        "width": null,
+        "max_units": 4
+      }
+    }
+  },
+  {
+    "layout": "competition",
+    "duration": 5,
+    "role": "三项判断：每卡两行；最后一项为橙色提醒。",
+    "slots": {
+      "title": {
+        "example": "竞争：竞品、头部、Review",
+        "font_size": 39,
+        "bold": true,
+        "width": 14.2,
+        "max_units": 25
+      },
+      "subtitle": {
+        "example": "三项交叉看，不只数卖家。",
+        "font_size": 20,
+        "bold": false,
+        "width": 14.4,
+        "max_units": 42
+      },
+      "caption": {
+        "example": "“≤500件”对象与单位未明，先核实。",
+        "font_size": 20,
+        "bold": true,
+        "width": 13.9,
+        "max_units": 36
+      },
+      "note": {
+        "example": "原文疑点保留，不擅自改写成 Review 或竞品数量阈值。",
+        "font_size": 13,
+        "bold": false,
+        "width": 14.2,
+        "max_units": 52
+      },
+      "body_01": {
+        "example": "竞品数量",
+        "font_size": 28,
+        "bold": true,
+        "width": 4.1000000000000005,
+        "max_units": 9
+      },
+      "body_02": {
+        "example": "有多少产品在争同一需求？",
+        "font_size": 22,
+        "bold": false,
+        "width": 4.1000000000000005,
+        "max_units": 12
+      },
+      "body_03": {
+        "example": "头部卖家占比",
+        "font_size": 28,
+        "bold": true,
+        "width": 4.1000000000000005,
+        "max_units": 9
+      },
+      "body_04": {
+        "example": "销量是否集中在少数卖家？",
+        "font_size": 22,
+        "bold": false,
+        "width": 4.1000000000000005,
+        "max_units": 12
+      },
+      "body_05": {
+        "example": "Review 数量",
+        "font_size": 28,
+        "bold": true,
+        "width": 4.1000000000000005,
+        "max_units": 9
+      },
+      "body_06": {
+        "example": "新进入者面对怎样的积累？",
+        "font_size": 22,
+        "bold": false,
+        "width": 4.1000000000000005,
+        "max_units": 12
+      },
+      "body_07": {
+        "example": "原文“≤500 件”：对应指标与单位未明确",
+        "font_size": 28,
+        "bold": true,
+        "width": 12.9,
+        "max_units": 29
+      }
+    }
+  },
+  {
+    "layout": "profit",
+    "duration": 6,
+    "role": "三项对照：每卡标题、突出结论、解释；最后一项为成本或口径提醒。",
+    "slots": {
+      "title": {
+        "example": "利润参考：30%目标，20%警戒",
+        "font_size": 39,
+        "bold": true,
+        "width": 14.2,
+        "max_units": 25
+      },
+      "subtitle": {
+        "example": "原材料：毛利率目标 ≥30%；<20%慎选。",
+        "font_size": 20,
+        "bold": false,
+        "width": 14.4,
+        "max_units": 42
+      },
+      "caption": {
+        "example": "先定毛利成本口径，再对照目标。",
+        "font_size": 20,
+        "bold": true,
+        "width": 13.9,
+        "max_units": 36
+      },
+      "note": {
+        "example": "毛利率不能与扣齐全部费用后的利润率混用。",
+        "font_size": 13,
+        "bold": false,
+        "width": 14.2,
+        "max_units": 52
+      },
+      "body_01": {
+        "example": "原文毛利率目标",
+        "font_size": 25,
+        "bold": true,
+        "width": null,
+        "max_units": 7
+      },
+      "body_02": {
+        "example": "≥30%",
+        "font_size": 55,
+        "bold": true,
+        "width": null,
+        "max_units": 4
+      },
+      "body_03": {
+        "example": "先明确成本范围",
+        "font_size": 20,
+        "bold": false,
+        "width": null,
+        "max_units": 7
+      },
+      "body_04": {
+        "example": "原文谨慎区间",
+        "font_size": 25,
+        "bold": true,
+        "width": null,
+        "max_units": 6
+      },
+      "body_05": {
+        "example": "<20%",
+        "font_size": 55,
+        "bold": true,
+        "width": null,
+        "max_units": 4
+      },
+      "body_06": {
+        "example": "原文提示“慎选”",
+        "font_size": 20,
+        "bold": false,
+        "width": null,
+        "max_units": 8
+      },
+      "body_07": {
+        "example": "比较之前",
+        "font_size": 25,
+        "bold": true,
+        "width": null,
+        "max_units": 4
+      },
+      "body_08": {
+        "example": "统一口径",
+        "font_size": 36,
+        "bold": true,
+        "width": null,
+        "max_units": 4
+      },
+      "body_09": {
+        "example": "毛利 ≠ 扣齐费用后的利润",
+        "font_size": 18,
+        "bold": false,
+        "width": 3.9,
+        "max_units": 14
+      },
+      "body_10": {
+        "example": "产品成本：至少包含出厂价与包装费",
+        "font_size": 24,
+        "bold": false,
+        "width": null,
+        "max_units": 16
+      }
+    }
+  },
+  {
+    "layout": "reputation",
+    "duration": 7,
+    "role": "三项检验：每卡标签、数值或短结论、条件；最后一项为总结。",
+    "slots": {
+      "title": {
+        "example": "口碑：4.0、3.8、5%、10%",
+        "font_size": 39,
+        "bold": true,
+        "width": 14.2,
+        "max_units": 25
+      },
+      "subtitle": {
+        "example": "评分 ≥4.0；<3.8谨慎 ｜ 退货率 ≤5%；非标品 ≤10%",
+        "font_size": 20,
+        "bold": false,
+        "width": 14.4,
+        "max_units": 42
+      },
+      "caption": {
+        "example": "评分与退货率，两边都看。",
+        "font_size": 20,
+        "bold": true,
+        "width": 13.9,
+        "max_units": 36
+      },
+      "note": {
+        "example": "“非标品”范围与退货统计周期，原文未明确。",
+        "font_size": 13,
+        "bold": false,
+        "width": 14.2,
+        "max_units": 52
+      },
+      "body_01": {
+        "example": "Review 评分",
+        "font_size": 25,
+        "bold": true,
+        "width": 4.0,
+        "max_units": 10
+      },
+      "body_02": {
+        "example": "≥4.0",
+        "font_size": 52,
+        "bold": true,
+        "width": null,
+        "max_units": 4
+      },
+      "body_03": {
+        "example": "低于3.8需谨慎",
+        "font_size": 22,
+        "bold": false,
+        "width": 4.0,
+        "max_units": 11
+      },
+      "body_04": {
+        "example": "退货率",
+        "font_size": 25,
+        "bold": true,
+        "width": 4.0,
+        "max_units": 10
+      },
+      "body_05": {
+        "example": "≤5%",
+        "font_size": 52,
+        "bold": true,
+        "width": null,
+        "max_units": 4
+      },
+      "body_06": {
+        "example": "材料一般参考值",
+        "font_size": 22,
+        "bold": false,
+        "width": 4.0,
+        "max_units": 11
+      },
+      "body_07": {
+        "example": "非标品退货率",
+        "font_size": 25,
+        "bold": true,
+        "width": 4.0,
+        "max_units": 10
+      },
+      "body_08": {
+        "example": "≤10%",
+        "font_size": 52,
+        "bold": true,
+        "width": null,
+        "max_units": 4
+      },
+      "body_09": {
+        "example": "材料单列的参考值",
+        "font_size": 22,
+        "bold": false,
+        "width": 4.0,
+        "max_units": 11
+      },
+      "body_10": {
+        "example": "评价反馈 + 使用结果：两边都看",
+        "font_size": 23,
+        "bold": false,
+        "width": null,
+        "max_units": 14.62
+      }
+    }
+  },
+  {
+    "layout": "logistics",
+    "duration": 6,
+    "role": "产品/组成图：第一项为箱体标题，随后长宽高三个标签，随后三项核对步骤及一句补充。图示始终为箱体，不适合时用来表示研究对象的三个维度，不编造物流内容。",
+    "slots": {
+      "title": {
+        "example": "物流：2kg之外，还要看尺寸",
+        "font_size": 39,
+        "bold": true,
+        "width": 14.2,
+        "max_units": 25
+      },
+      "subtitle": {
+        "example": "材料重量参考 ≤2kg；核对包装后的长、宽、高。",
+        "font_size": 20,
+        "bold": false,
+        "width": 14.4,
+        "max_units": 42
+      },
+      "caption": {
+        "example": "重量 + 尺寸 → 核对配送与仓储费用。",
+        "font_size": 20,
+        "bold": true,
+        "width": 13.9,
+        "max_units": 36
+      },
+      "note": {
+        "example": "≤2kg不自动等于平台轻小件分段；按目标站点核实。",
+        "font_size": 13,
+        "bold": false,
+        "width": 14.2,
+        "max_units": 52
+      },
+      "body_01": {
+        "example": "重量参考 ≤2kg",
+        "font_size": 29,
+        "bold": true,
+        "width": null,
+        "max_units": 7.16
+      },
+      "body_02": {
+        "example": "长",
+        "font_size": 22,
+        "bold": false,
+        "width": null,
+        "max_units": 3
+      },
+      "body_03": {
+        "example": "宽",
+        "font_size": 22,
+        "bold": false,
+        "width": null,
+        "max_units": 3
+      },
+      "body_04": {
+        "example": "高",
+        "font_size": 22,
+        "bold": false,
+        "width": null,
+        "max_units": 3
+      },
+      "body_05": {
+        "example": "包装后长 × 宽 × 高",
+        "font_size": 25,
+        "bold": true,
+        "width": null,
+        "max_units": 10.16
+      },
+      "body_06": {
+        "example": "核对实际尺寸分段",
+        "font_size": 25,
+        "bold": true,
+        "width": null,
+        "max_units": 8
+      },
+      "body_07": {
+        "example": "配送费 + 仓储费",
+        "font_size": 25,
+        "bold": true,
+        "width": null,
+        "max_units": 7.62
+      },
+      "body_08": {
+        "example": "仓储：占用体积、存放时间等",
+        "font_size": 21,
+        "bold": false,
+        "width": 6.5,
+        "max_units": 20
+      }
+    }
+  },
+  {
+    "layout": "compliance",
+    "duration": 7,
+    "role": "两组对照：左卡四行，右卡四行；右卡第二行大字。",
+    "slots": {
+      "title": {
+        "example": "合规与趋势：能做，才谈增长",
+        "font_size": 39,
+        "bold": true,
+        "width": 14.2,
+        "max_units": 25
+      },
+      "subtitle": {
+        "example": "认证 · 侵权风险 ｜ 类目销量增长率 ≥10%（材料参考）",
+        "font_size": 20,
+        "bold": false,
+        "width": 14.4,
+        "max_units": 42
+      },
+      "caption": {
+        "example": "增长率先问周期、基期；合规项逐项核实。",
+        "font_size": 20,
+        "bold": true,
+        "width": 13.9,
+        "max_units": 36
+      },
+      "note": {
+        "example": "趋势阈值不是盈利保证；实际认证与风险按产品核查。",
+        "font_size": 13,
+        "bold": false,
+        "width": 14.2,
+        "max_units": 52
+      },
+      "body_01": {
+        "example": "⑦ 合规：先核实准入与风险",
+        "font_size": 27,
+        "bold": true,
+        "width": 6.4,
+        "max_units": 15
+      },
+      "body_02": {
+        "example": "是否需要强制认证？",
+        "font_size": 25,
+        "bold": false,
+        "width": null,
+        "max_units": 9
+      },
+      "body_03": {
+        "example": "商标、专利等侵权风险？",
+        "font_size": 25,
+        "bold": false,
+        "width": null,
+        "max_units": 11
+      },
+      "body_04": {
+        "example": "结合产品与目标站点核查",
+        "font_size": 21,
+        "bold": false,
+        "width": null,
+        "max_units": 11
+      },
+      "body_05": {
+        "example": "⑧ 趋势：类目销量增长率",
+        "font_size": 27,
+        "bold": true,
+        "width": 6.4,
+        "max_units": 15
+      },
+      "body_06": {
+        "example": "≥10%",
+        "font_size": 54,
+        "bold": true,
+        "width": null,
+        "max_units": 4
+      },
+      "body_07": {
+        "example": "原文参考；统计周期未说明",
+        "font_size": 21,
+        "bold": false,
+        "width": null,
+        "max_units": 12
+      },
+      "body_08": {
+        "example": "同比？环比？比较哪一期？",
+        "font_size": 21,
+        "bold": false,
+        "width": null,
+        "max_units": 12
+      }
+    }
+  },
+  {
+    "layout": "overview",
+    "duration": 6,
+    "role": "主动回忆：第一项为问题，其后八张卡，每卡编号标题、答案。",
+    "slots": {
+      "title": {
+        "example": "最后自测：能说出八项指标吗？",
+        "font_size": 39,
+        "bold": true,
+        "width": 14.2,
+        "max_units": 25
+      },
+      "subtitle": {
+        "example": "先回想，再看答案。",
+        "font_size": 20,
+        "bold": false,
+        "width": 14.4,
+        "max_units": 42
+      },
+      "caption": {
+        "example": "四原则定方向，八指标找依据，口径明确再比较。",
+        "font_size": 20,
+        "bold": true,
+        "width": 13.9,
+        "max_units": 36
+      },
+      "note": {
+        "example": "快复习版只覆盖原则和指标，未加入利润测算。",
+        "font_size": 13,
+        "bold": false,
+        "width": 14.2,
+        "max_units": 52
+      },
+      "body_01": {
+        "example": "先在心里回答，再看答案。",
+        "font_size": 34,
+        "bold": true,
+        "width": null,
+        "max_units": 12
+      },
+      "body_02": {
+        "example": "01  销量",
+        "font_size": 28,
+        "bold": true,
+        "width": 2.8,
+        "max_units": 6
+      },
+      "body_03": {
+        "example": "BSR · 日均销量",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 8
+      },
+      "body_04": {
+        "example": "02  竞争",
+        "font_size": 28,
+        "bold": true,
+        "width": 2.8,
+        "max_units": 6
+      },
+      "body_05": {
+        "example": "竞品 · 头部 · Review",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 11.4
+      },
+      "body_06": {
+        "example": "03  利润",
+        "font_size": 28,
+        "bold": true,
+        "width": 2.8,
+        "max_units": 6
+      },
+      "body_07": {
+        "example": "目标与成本口径",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 8
+      },
+      "body_08": {
+        "example": "04  口碑",
+        "font_size": 28,
+        "bold": true,
+        "width": 2.8,
+        "max_units": 6
+      },
+      "body_09": {
+        "example": "评分 · 退货率",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 8
+      },
+      "body_10": {
+        "example": "05  需求",
+        "font_size": 28,
+        "bold": true,
+        "width": 2.8,
+        "max_units": 6
+      },
+      "body_11": {
+        "example": "搜索量 · 供需比",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 8.08
+      },
+      "body_12": {
+        "example": "06  物流",
+        "font_size": 28,
+        "bold": true,
+        "width": 2.8,
+        "max_units": 6
+      },
+      "body_13": {
+        "example": "重量 · 尺寸",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 8
+      },
+      "body_14": {
+        "example": "07  合规",
+        "font_size": 28,
+        "bold": true,
+        "width": 2.8,
+        "max_units": 6
+      },
+      "body_15": {
+        "example": "认证 · 侵权风险",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 8.08
+      },
+      "body_16": {
+        "example": "08  趋势",
+        "font_size": 28,
+        "bold": true,
+        "width": 2.8,
+        "max_units": 6
+      },
+      "body_17": {
+        "example": "类目增长率",
+        "font_size": 22,
+        "bold": false,
+        "width": 2.8,
+        "max_units": 8
+      }
+    }
+  }
+]

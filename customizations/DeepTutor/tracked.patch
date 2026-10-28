@@ -1,27 +1,6 @@
 --- a/deeptutor/api/main.py
 +++ b/deeptutor/api/main.py
-@@ -7,6 +7,7 @@
- from fastapi.middleware.cors import CORSMiddleware
- from fastapi.responses import JSONResponse, RedirectResponse
- 
-+from deeptutor.api.security_guard import install_security_guard
- from deeptutor.logging import configure_logging
- from deeptutor.services.config import (
-     ensure_runtime_settings_files,
-@@ -444,6 +445,12 @@
-             },
-         )
- 
-+
-+# Optional fastapi-guard screening (off unless security_guard.enabled). Added
-+# before the access log and CORS middlewares below: Starlette makes the last-added
-+# middleware outermost, so CORS stays outside the guard (429/403 carry CORS
-+# headers) and the access log sees what the guard rejects.
-+install_security_guard(app)
- 
- # Access logging is funneled through this one middleware. uvicorn's own
- # per-request access log is disabled on every launch path (run_server.py via
-@@ -559,6 +566,7 @@
+@@ -566,6 +566,7 @@
      space_cli_apps,
      space_mcp,
      subagents,
@@ -29,7 +8,7 @@
      system,
      task_board,
      unified_ws,
-@@ -638,6 +646,7 @@
+@@ -645,6 +646,7 @@
  )
  app.include_router(co_writer.router, prefix="/api", tags=["documents"], dependencies=_auth)
  app.include_router(notebook.router, prefix="/api", tags=["notebooks"], dependencies=_auth)
@@ -37,6 +16,26 @@
  app.include_router(
      task_board.router, prefix="/api/task-board", tags=["task-board"], dependencies=_auth
  )
+--- a/deeptutor/runtime/launcher.py
++++ b/deeptutor/runtime/launcher.py
+@@ -1521,7 +1521,7 @@
+     common_env["BACKEND_PORT"] = str(backend_port)
+     common_env["FRONTEND_PORT"] = str(frontend_port)
+     common_env["PORT"] = str(frontend_port)
+-    common_env["HOSTNAME"] = "0.0.0.0"
++    common_env["HOSTNAME"] = "127.0.0.1"
+     common_env["NEXT_PUBLIC_API_BASE"] = api_base
+     common_env["NEXT_PUBLIC_AUTH_ENABLED"] = "true" if auth_enabled else "false"
+     # The Next.js middleware (web/proxy.ts) runs in the frontend's Node runtime
+@@ -1568,7 +1568,7 @@
+         "uvicorn",
+         "deeptutor.api.main:app",
+         "--host",
+-        "0.0.0.0",
++        "127.0.0.1",
+         "--port",
+         str(backend_port),
+         "--log-level",
 --- a/deeptutor/services/llm/client.py
 +++ b/deeptutor/services/llm/client.py
 @@ -112,7 +112,7 @@
@@ -59,70 +58,7 @@
      # Core runtime
      "PyYAML>=6.0",
      "jinja2>=3.1.0",
-@@ -48,6 +50,11 @@
-     # without it the browser renders no code at all — the operator sees a
-     # button that does nothing, with no error to explain why.
-     "qrcode>=7.4.0,<9.0.0",
-+    # IANA time zone database for `zoneinfo`. Windows ships none, so without
-+    # it every named zone (even "UTC") is unknown there and usage statistics,
-+    # practice reviews and cron schedules reject every timezone they are given.
-+    # On Linux/macOS `zoneinfo` keeps preferring the system database.
-+    "tzdata>=2024.1",
-     # Full app dependencies included by default for `pip install deeptutor`.
-     "anthropic>=0.30.0",
-     "dashscope>=1.14.0",
-@@ -57,6 +64,7 @@
-     # The current BM25 integration pins PyStemmer <3, whose 2.x line has no
-     # Python 3.14 wheels. Skip it there so ordinary installs never require a C
-     # compiler; the retriever already falls back to vector search when absent.
-+    "bm25s>=0.3.14,<0.4.0",  # Legacy page lookup without optional PyStemmer
-     "llama-index-retrievers-bm25>=0.7.1,<0.8.0; python_version < '3.14'",
-     # FAISS vector store: vectorized ANN retrieval that replaces SimpleVectorStore's
-     # brute-force per-query scan for large knowledge bases (issue #552). The
-@@ -87,10 +95,9 @@
-     "loguru>=0.7.3,<1.0.0",
-     "json-repair>=0.57.0,<1.0.0",
-     "croniter>=6.0.0,<7.0.0",
--    # Process-tree memory readings for /api/system/memory. Soft dependency:
--    # deeptutor.runtime.memory_probe imports it lazily and falls back to /proc,
--    # so a missing wheel costs the settings strip, not the app.
-+    # Process-tree memory readings and Windows MinerU worker ownership.
-     "psutil>=5.9.0,<8.0.0",
-+    "pywin32; sys_platform == 'win32'",  # MinerU Job Object ownership
- ]
- 
- [project.scripts]
-@@ -109,6 +116,8 @@
- # already included in the public `deeptutor` wheel; the local CLI-only project
- # under `packaging/deeptutor-cli` uses the same list without Web assets/server deps.
- cli = [
-+    "psutil>=5.9.0,<8.0.0",
-+    "pywin32; sys_platform == 'win32'",  # MinerU Job Object ownership
-     "packaging>=24.2",
-     # LLM provider SDKs
-     "anthropic>=0.30.0",
-@@ -118,6 +127,7 @@
-     "pageindex>=0.2.10,<0.3.0",
-     # RAG (LlamaIndex)
-     "llama-index>=0.14.12",
-+    "bm25s>=0.3.14,<0.4.0",  # Legacy page lookup without optional PyStemmer
-     "llama-index-retrievers-bm25>=0.7.1,<0.8.0; python_version < '3.14'",
-     # FAISS vector store: vectorized ANN retrieval that replaces SimpleVectorStore's
-     # brute-force per-query scan for large knowledge bases (issue #552). The
-@@ -271,6 +281,12 @@
- # package or configured model is unavailable.
- rag-rerank = ["sentence-transformers>=3.0.0,<6.0.0; python_version < '3.14'"]
- 
-+# Optional request screening (rate limit, IP allow/deny lists, attack-pattern
-+# scan of path, query and headers). Off unless system.json `security_guard`
-+# is enabled; see docs-for-user/SECURITY_GUARD.md. Mirrors
-+# requirements/guard.txt. Docker: DEEPTUTOR_EXTRAS=guard.
-+guard = ["fastapi-guard>=8.1.1,<9.0.0"]
-+
- # Dev/test tooling. Mirrors requirements/dev.txt.
- dev = [
-     "deeptutor[server]",
-@@ -322,6 +338,7 @@
+@@ -336,6 +338,7 @@
      "**/*.sh",
      "**/*.j2",
      "**/*.jinja",
@@ -178,6 +114,21 @@
    {
      href: '/kanban',
      label: 'Task Board',
+--- a/web/next.config.js
++++ b/web/next.config.js
+@@ -126,6 +126,7 @@
+   // create/upload batches use dedicated streaming route handlers instead, so
+   // their total size is not coupled to this in-memory clone limit.
+   experimental: {
++    cpus: 2,
+     proxyClientMaxBodySize: 210 * 1024 * 1024,
+     // Agentic reads and full-draft edits routinely exceed Next's 30-second
+     // rewrite default; the browser remains responsible for cancelling them.
+@@ -201,3 +202,4 @@
+ };
+ 
+ module.exports = nextConfig;
++
 --- a/web/package-lock.json
 +++ b/web/package-lock.json
 @@ -20,6 +20,8 @@

@@ -1,0 +1,3 @@
+# Isolated Manim renderer; no API key or model inference is required here.
+manim==0.22.0
+imageio-ffmpeg==0.6.0

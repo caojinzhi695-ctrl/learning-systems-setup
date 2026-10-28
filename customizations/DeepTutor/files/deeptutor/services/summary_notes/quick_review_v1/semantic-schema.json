@@ -1,0 +1,143 @@
+{
+  "$defs": {
+    "ReviewCard": {
+      "additionalProperties": false,
+      "properties": {
+        "heading": {
+          "maxLength": 24,
+          "minLength": 1,
+          "title": "Heading",
+          "type": "string"
+        },
+        "highlight": {
+          "default": "",
+          "maxLength": 32,
+          "title": "Highlight",
+          "type": "string"
+        },
+        "detail": {
+          "default": "",
+          "maxLength": 80,
+          "title": "Detail",
+          "type": "string"
+        }
+      },
+      "required": [
+        "heading"
+      ],
+      "title": "ReviewCard",
+      "type": "object"
+    },
+    "ReviewScene": {
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "maxLength": 50,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "subtitle": {
+          "default": "",
+          "maxLength": 100,
+          "title": "Subtitle",
+          "type": "string"
+        },
+        "layout": {
+          "default": "cards",
+          "enum": [
+            "cards",
+            "compare",
+            "recall"
+          ],
+          "title": "Layout",
+          "type": "string"
+        },
+        "duration": {
+          "maximum": 18,
+          "minimum": 4,
+          "title": "Duration",
+          "type": "number"
+        },
+        "cards": {
+          "items": {
+            "$ref": "#/$defs/ReviewCard"
+          },
+          "maxItems": 6,
+          "minItems": 2,
+          "title": "Cards",
+          "type": "array"
+        },
+        "caption": {
+          "default": "",
+          "maxLength": 100,
+          "title": "Caption",
+          "type": "string"
+        },
+        "note": {
+          "default": "",
+          "maxLength": 120,
+          "title": "Note",
+          "type": "string"
+        },
+        "question": {
+          "default": "",
+          "maxLength": 60,
+          "title": "Question",
+          "type": "string"
+        },
+        "source_quote": {
+          "maxLength": 180,
+          "minLength": 1,
+          "title": "Source Quote",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "duration",
+        "cards",
+        "source_quote"
+      ],
+      "title": "ReviewScene",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "template_id": {
+      "const": "manim-review-v2",
+      "default": "manim-review-v2",
+      "title": "Template Id",
+      "type": "string"
+    },
+    "title": {
+      "maxLength": 60,
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "summary": {
+      "maxLength": 260,
+      "minLength": 1,
+      "title": "Summary",
+      "type": "string"
+    },
+    "scenes": {
+      "items": {
+        "$ref": "#/$defs/ReviewScene"
+      },
+      "maxItems": 24,
+      "minItems": 2,
+      "title": "Scenes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "title",
+    "summary",
+    "scenes"
+  ],
+  "title": "SemanticPlan",
+  "type": "object"
+}

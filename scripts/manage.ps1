@@ -43,6 +43,11 @@ function Install-Notes {
   Run-Native $dtPython @((Join-Path $PSScriptRoot 'prepare-notes.py'),'--source',$source)
   Run-Native $dtPython @('-m','pip','install','beautifulsoup4>=4.15.0,<5','markdown-it-py>=3,<5')
   Run-Native $dtPython @('-m','pip','install','-r',(Join-Path $source 'requirements-summary-notes.txt'))
+  # Render in an isolated environment, separate from DeepTutor and DeepSeek.
+  $manimHome = Join-Path $dtHome 'tools/manim/.venv'
+  $manimPython = Join-Path $manimHome 'Scripts/python.exe'
+  if(-not(Test-Path -LiteralPath $manimPython)) { Run-Native $dtPython @('-m','venv',$manimHome) }
+  Run-Native $manimPython @('-m','pip','install','-r',(Join-Path $source 'requirements-review-video.txt'))
   Run-Native $dtPython @('-m','pip','install','--no-deps','-e',$source)
   Push-Location (Join-Path $source 'web')
   try { Run-Native npm @('ci','--legacy-peer-deps','--no-audit','--no-fund') } finally { Pop-Location }
@@ -52,9 +57,9 @@ function Install-One([string]$Name) {
   $dir = Join-Path $Root $Name
   if(Test-Path -LiteralPath $dir){throw "$Name already exists; reuse or update it manually. No overwrite performed."}
   if($Name -eq 'DeepTutor') {
-    Run-Native git @('clone','--depth','1','--branch','v1.6.14','https://github.com/HKUDS/DeepTutor.git',$dir)
+    Run-Native git @('clone','--depth','1','--branch','v1.6.15','https://github.com/HKUDS/DeepTutor.git',$dir)
     Run-Native python @('-m','venv',(Join-Path $dir '.venv'))
-    Run-Native $dtPython @('-m','pip','install','deeptutor==1.6.14')
+    Run-Native $dtPython @('-m','pip','install','deeptutor==1.6.15')
     New-Item -ItemType Directory -Path $dtHome -Force | Out-Null
     Run-Native $dt @('init','--home',$dtHome,'--non-interactive')
     Run-Native $dtPython @((Join-Path $PSScriptRoot 'prepare.py'),'--root',$Root,'--project','DeepTutor')

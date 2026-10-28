@@ -1,12 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, Plus, Paperclip, NotebookPen, PanelRight, X, LoaderCircle } from "lucide-react";
+import { ArrowUp, Plus, Paperclip, NotebookPen, PanelRight, X, LoaderCircle, Film } from "lucide-react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import ReviewExam from "@/components/summary-notes/ReviewExam";
 import DownloadExam from "@/components/summary-notes/DownloadExam";
 const NoteMindmap = dynamic(() => import("@/components/summary-notes/NoteMindmap"), { ssr: false });
+const ReviewVideo = dynamic(() => import("@/components/summary-notes/ManimReviewVideo"), { ssr: false });
 import { useTranslation } from "react-i18next";
 import MarkdownRenderer from "@/components/common/MarkdownRenderer";
 import { apiFetch, apiUrl } from "@/lib/api";
@@ -28,6 +29,8 @@ export default function SummaryNotesPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [message, setMessage] = useState("");
   const [collectionOpen, setCollectionOpen] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(false);
+  const [videoNoteId, setVideoNoteId] = useState<string | undefined>();
   const [collectionWidth, setCollectionWidth] = useState(380);
   const [resizingCollection, setResizingCollection] = useState(false);
   const collectionRef = useRef<HTMLElement>(null);
@@ -163,7 +166,9 @@ export default function SummaryNotesPage() {
       </select>
       <button type="button" aria-label={t("新建笔记聊天")} title={t("新建笔记聊天")} disabled={busy || importing || loading} onClick={() => void create()} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-[var(--muted-foreground)] hover:bg-[var(--muted)] focus-visible:outline-2 disabled:opacity-50"><Plus size={20} /></button>
       <button type="button" aria-label={t("收集栏")} title={t("收集栏")} aria-expanded={collectionOpen} aria-controls="note-collection" onClick={() => setCollectionOpen(open => !open)} className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2 text-sm text-[var(--muted-foreground)] hover:bg-[var(--muted)] focus-visible:outline-2"><PanelRight size={18} /><span className="hidden sm:inline">{t("收集栏")}</span><span className="text-xs">{session?.turns.length || 0}</span></button>
+      <button type="button" aria-label="复习视频" title="Manim 复习视频" aria-expanded={videoOpen} onClick={() => setVideoOpen(true)} className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2 text-sm text-[var(--muted-foreground)] hover:bg-[var(--muted)]"><Film size={18} /><span className="hidden sm:inline">复习视频</span></button>
     </header>
+    <ReviewVideo open={videoOpen} onClose={() => setVideoOpen(false)} notes={session?.turns || []} sessionId={session?.id} initialNoteId={videoNoteId} />
     <div className="relative flex min-h-0 flex-1 overflow-hidden">
     <div className="flex min-w-0 flex-1 flex-col">
     <main className="min-h-0 flex-1 overflow-y-auto">
@@ -216,10 +221,13 @@ export default function SummaryNotesPage() {
       </header>
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
         {!loading && session?.turns.slice().reverse().map((turn, index) => <section key={turn.id} aria-label={`${t("笔记结果")} ${session.turns.length - index}`} className="space-y-3">
-          <details className="w-full rounded-2xl bg-[var(--muted)] px-4 py-3">
+          <div className="flex items-start gap-2 rounded-2xl bg-[var(--muted)] px-4 py-3">
+          <details className="min-w-0 flex-1">
             <summary className="cursor-pointer text-sm"><span className="inline-block max-w-[90%] truncate align-bottom">{turn.message.split("\n").find(line => line.trim()) || t("查看本次材料／修改要求")}</span></summary>
             <pre className="mt-3 max-h-64 overflow-auto whitespace-pre-wrap break-words text-sm leading-6">{turn.message}</pre>
           </details>
+          <button type="button" data-note-id={turn.id} aria-label={`生成视频：${turn.title || "本篇笔记"}`} title={turn.status === "complete" && turn.notes ? "用这篇 AI 笔记生成复习视频" : "请先完成 AI 笔记"} disabled={turn.status !== "complete" || !turn.notes} onClick={() => { setVideoNoteId(turn.id); setVideoOpen(true); }} className="flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-indigo-600 hover:bg-indigo-50 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-not-allowed disabled:opacity-40"><Film size={14} />生成视频</button>
+          </div>
           <div className="space-y-3 rounded-2xl border border-[var(--border)] px-4 py-4 ">
             <div className="flex justify-end"><button type="button" disabled={busy || importing || !!deleting} onClick={() => void deleteNote(turn)} className="rounded-lg px-2 py-1 text-xs text-red-600 hover:bg-red-50 disabled:opacity-40" aria-label={`删除笔记 ${turn.title || index + 1}`}>{deleting === turn.id ? "正在删除…" : "删除笔记"}</button></div>
             <div className="flex items-center gap-2 text-sm font-medium"><NotebookPen size={16} className="shrink-0 text-[var(--muted-foreground)]" /><span className="min-w-0 break-words">{turn.title || t("笔记结果")}</span><span className="ml-auto shrink-0 text-xs font-normal text-[var(--muted-foreground)]">{turn.status === "complete" ? t("已完成") : t("未完成")}</span></div>

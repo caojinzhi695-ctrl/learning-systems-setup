@@ -2,3 +2,4 @@
 customizations/DeepTutor/files/** -text whitespace=cr-at-eol
 customizations/DeepTutor/files/web/app/fonts/*-OFL.txt -whitespace
 customizations/DeepTutor/tracked.patch -text -whitespace
+customizations/DeepTutor/*.patch -text -whitespace

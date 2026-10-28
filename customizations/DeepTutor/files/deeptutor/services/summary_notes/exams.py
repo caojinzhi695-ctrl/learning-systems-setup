@@ -96,3 +96,58 @@ def export_word(paper):
     output = BytesIO()
     doc.save(output)
     return output.getvalue()
+
+
+def interactive_note(paper, note_id=None):
+    """Adapt a saved paper to the user's NOTE schema without another model call."""
+    import hashlib
+    import math
+    digest = hashlib.sha256(json.dumps(paper, ensure_ascii=False, sort_keys=True).encode()).hexdigest()[:24]
+    questions = []
+    points = {}
+    for q in paper['questions']:
+        kind = q['type']
+        is_choice = kind in ('single', 'multiple') and bool(q.get('options'))
+        options = q.get('options', [])
+        keys = q.get('correctOptions', [])
+        correct = [i for i, option in enumerate(options) if option['key'] in keys]
+        if is_choice and (not correct or (kind == 'single' and len(correct) != 1)):
+            raise ValueError('试卷选项与参考答案不一致，请先核对原试卷。')
+        entry = {'type': kind if is_choice else ('text' if kind == 'fill' else 'open'),
+                 'label': TYPES.get(kind, kind), 'title': q['prompt'], 'answer': answer(q),
+                 'why': q['explanation'], 'point': q['knowledgePoint']}
+        if is_choice:
+            entry.update(options=[o['text'] for o in options], correct=correct)
+        # Free text is self-assessed; no invented exact-match or semantic grading.
+        questions.append(entry)
+        point = q['knowledgePoint'].strip()
+        if point:
+            points.setdefault(point, [])
+            if q['explanation'] not in points[point]: points[point].append(q['explanation'])
+    summary = [{'label': k, 'text': ' '.join(v[:2])} for k, v in points.items()]
+    point_names = list(points)
+    branches = []
+    size = max(1, math.ceil(len(point_names) / 4))
+    for i in range(0, len(point_names), size):
+        group = point_names[i:i + size]
+        branches.append({'title': f'{len(branches)+1:02d} ' + group[0], 'items': group})
+    recap = paper.get('recap', [])
+    return {'id': note_id or 'deeptutor-exam-' + digest, 'title': paper['title'],
+            'question': '如何理解并运用《' + paper['title'] + '》中的知识点？',
+            'source': paper['scope'], 'minutes': max(1, len(questions) * 2),
+            'summary': summary, 'actions': [
+                {'label': '主动回忆', 'text': '合上答案，复述这份试卷涉及的核心概念。'},
+                {'label': '核对疑问', 'text': '对照本卷解析和原笔记核对错题与不确定之处。'},
+                {'label': '再次练习', 'text': '给不确定的题目标记待复习，稍后重新作答。'}],
+            'branches': branches, 'questions': questions, 'keywords': point_names[:3],
+            'summaryLead': '；'.join(recap) or '围绕本卷知识点练习并核对参考答案。',
+            'summaryBoundary': paper['scope'] + '。本页依据已保存试卷整理，知识总结来自题目解析，未重新读取原始资料；开放题请对照参考要点自评。'}
+
+
+def export_html(paper, note_id=None):
+    from pathlib import Path
+    template = (Path(__file__).parent / 'assets' / 'exam-interactive-template.html').read_text(encoding='utf-8')
+    payload = json.dumps(interactive_note(paper, note_id), ensure_ascii=False)
+    # Prevent text from terminating the trusted inline script or starting HTML tags.
+    payload = payload.replace('&', '\\u0026').replace('<', '\\u003c').replace('>', '\\u003e').replace('\u2028', '\\u2028').replace('\u2029', '\\u2029')
+    return template.replace('__DEEPTUTOR_EXAM_DATA__', payload)

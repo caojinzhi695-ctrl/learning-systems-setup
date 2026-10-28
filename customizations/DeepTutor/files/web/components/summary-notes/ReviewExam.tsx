@@ -27,7 +27,7 @@ export default function ReviewExam({sessionId,turnId}:{sessionId:string;turnId:s
    {pending&&<p role="status" className="text-xs">正在生成，收起后仍会继续。</p>}
    {exams.length>0&&<label className="block text-xs">试卷版本<select aria-label="试卷版本" className="mt-2 w-full rounded-lg border border-[var(--border)] bg-[var(--background)] p-2" value={current?.id||''} onChange={e=>setSelected(e.target.value)}>{exams.map(e=><option key={e.id} value={e.id}>{new Date(e.created_at*1000).toLocaleString('zh-CN')} · {e.status==='complete'?'已完成':e.status==='generating'?'生成中':'未完成'}</option>)}</select></label>}
    {current?.error&&<p role="status" className="text-xs text-orange-700">{current.error}</p>}
-   {paper&&<><a className={`${button} inline-block`} href={apiUrl(`${base}/${current.id}/word`)}>下载 Word 文档</a>
+   {paper&&<><div className="flex flex-wrap gap-2"><a className={`${button} inline-block`} href={apiUrl(`${base}/${current.id}/word`)}>下载 Word 文档</a><a className={`${button} inline-block`} href={apiUrl(`${base}/${current.id}/html`)}>下载 HTML 练习卷</a></div>
     <article aria-label="复习练习卷" className="space-y-5 leading-7">
      <header><h3 className="text-base font-bold">{paper.title} 复习练习卷</h3><p className="text-xs text-[var(--muted-foreground)]">题量：{paper.questions.length} · {paper.scope}</p></header>
      <section className="space-y-4"><h4 className="font-bold">第一部分｜题目</h4>{paper.questions.map(q=><div key={q.id} className="space-y-2 border-b border-[var(--border)] pb-4"><p><strong>{q.id}. 【{types[q.type]}】</strong>{q.prompt}</p>{q.options.map(o=><p key={o.key} className="pl-3">{o.key}. {o.text}</p>)}</div>)}</section>

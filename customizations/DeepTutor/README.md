@@ -1,4 +1,4 @@
-# DeepTutor v1.6.14 总结笔记定制包
+# DeepTutor v1.6.15 学习助手定制包（0.8.0）
 
 `tracked.patch` 为原有文件的最小差异；`files/` 仅包含新增功能代码、固定规则、模板、本地字体和无真实模型调用的测试。`manifest.json` 固定上游提交及每个分发文件的 SHA-256。应用方法见 [使用说明](../../docs/summary-notes.md)。
 
@@ -8,4 +8,6 @@
 
 Geist 与 Lora 的 Latin 字体来自官方 DeepTutor v1.6.14 安装包自带资源，本地打包以避免构建时访问 Google Fonts；许可原文来自 google/fonts 的对应字体目录。固定 HTML 模板与笔记整理规则由维护者提供，生成后的个人内容不随包分发。
 
-当前版本包含思维导图、AI 练习题及 Word 下载、自动下载按钮和收集栏宽度拖动。`upgrade-review-exams.patch` 用于从上一版定制代码安全升级；安装器会验证哈希与补丁适用性。
+当前版本包含思维导图、互动练习及Word下载、收集栏宽度调整、DeepSeek两步复习视频、自动排版与字号配色，以及每篇笔记旁的生成视频按钮。`tracked.patch` 仅适配v1.6.15；旧的`upgrade-review-exams.patch`保留为历史资料，不由当前安装器应用。升级说明见 [复习视频文档](../../docs/review-video.md)。
+
+公开包不包含参考片、个人配乐或生成成片；配乐可通过本地环境变量DEEPTUTOR_REVIEW_MUSIC配置。无配乐正常导出静音MP4。

@@ -1,0 +1,29 @@
+{
+  "reference": "01-Manim-新手选品-50秒快复习.mp4",
+  "font": "Microsoft YaHei",
+  "colors": {
+    "ink": "#253B52",
+    "blue": "#3466E8",
+    "muted": "#7E8DA2",
+    "pale": "#EDF3FF",
+    "line": "#DFE7F3",
+    "orange": "#C88648"
+  },
+  "sizes": {
+    "title": 39,
+    "subtitle": 20,
+    "corner": 14,
+    "caption": 20,
+    "footnote": 13,
+    "card_heading": 26,
+    "four_card_heading": 28,
+    "grid_heading": 28,
+    "numeric_highlight": 52,
+    "text_highlight": 36,
+    "compact_highlight": 28,
+    "grid_highlight": 22,
+    "detail": 20,
+    "four_card_detail": 22,
+    "question": 34
+  }
+}

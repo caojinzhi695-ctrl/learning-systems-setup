@@ -20,9 +20,11 @@ from deeptutor.services.summary_notes.render import ASSETS, COMPLETE, render_htm
 from deeptutor.services.summary_notes.enex import export_enex
 
 from .summary_exams import router as exams_router
+from .summary_videos import router as videos_router
 
 router = APIRouter(prefix="/summary-notes")
 router.include_router(exams_router)
+router.include_router(videos_router)
 generation_lock = asyncio.Lock()
 
 
